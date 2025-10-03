@@ -10,84 +10,52 @@ import GoogleAccountPrompt from '@/components/features/GoogleAccountPrompt'
 import SyncStatus from '@/components/features/SyncStatus'
 import { getGreeting } from '@/lib/utils'
 import { useUser } from '@/hooks/useUser'
+import { useDashboardData } from '@/hooks/useDashboardData'
 import { generateDemoUUID } from '@/lib/uuid'
 
 export default function HomePage() {
   const { data: session } = useSession()
   const { user, isAuthenticated, isLoading: userLoading, hasGoogleAccess } = useUser()
+  const { data: dashboardData, loading: loadingData, invalidateCache } = useDashboardData()
   const [isListening, setIsListening] = useState(false)
-  const [dashboardData, setDashboardData] = useState<any>(null)
-  const [loadingData, setLoadingData] = useState(false)
   const greeting = getGreeting()
-
-  // Fetch dashboard data when user has Google access
-  useEffect(() => {
-    if (hasGoogleAccess && user) {
-      fetchDashboardData()
-    }
-  }, [hasGoogleAccess, user])
-
-  const fetchDashboardData = async () => {
-    setLoadingData(true)
-    try {
-      const response = await fetch('/api/dashboard')
-      if (response.ok) {
-        const { data } = await response.json()
-        setDashboardData(data)
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-    } finally {
-      setLoadingData(false)
-    }
-  }
 
   const handleVoiceCommand = async (command: string) => {
     console.log('🎤 Voice command received:', command)
 
-    // Simple command processing
-    const lowerCommand = command.toLowerCase().trim()
+    try {
+      // Send to OpenAI for processing
+      const response = await fetch('/api/voice/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: command })
+      })
 
-    if (lowerCommand.includes('hello') || lowerCommand.includes('hi')) {
-      alert(`Hello! I heard: "${command}"`)
-    } else if (lowerCommand.includes('test')) {
-      alert(`Test successful! I heard: "${command}"`)
-    } else if (lowerCommand.includes('add task')) {
-      // Extract task name from command
-      const taskMatch = command.match(/add task:?\s*(.+)/i)
-      const taskName = taskMatch ? taskMatch[1].trim() : command.replace(/add task:?\s*/i, '').trim()
+      if (response.ok) {
+        const data = await response.json()
 
-      if (taskName) {
-        try {
-          // Create the task via API
-          const response = await fetch('/api/tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: taskName,
-              status: 'pending',
-              priority: 'medium',
-              user_id: user?.id || generateDemoUUID()
-            })
-          })
+        // Show the AI-generated response
+        if (data.response) {
+          alert(data.response)
 
-          if (response.ok) {
-            alert(`✅ Task created: "${taskName}"`)
-            // Note: TaskManager will auto-refresh, no need to reload page
-          } else {
-            const errorData = await response.json()
-            console.error('Task creation failed:', errorData)
-            alert(`❌ Failed to create task: "${taskName}" - Please try again`)
+          // Speak the response if available
+          if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(data.response)
+            speechSynthesis.speak(utterance)
           }
-        } catch (error) {
-          console.error('Error creating task:', error)
-          alert(`❌ Error creating task: "${taskName}"`)
+        }
+
+        // Invalidate cache if task or habit was created
+        if (data.command?.intent === 'create_task' || data.command?.intent === 'create_habit') {
+          invalidateCache()
         }
       } else {
-        alert('Please specify a task name. Say "Add task: your task name"')
+        const error = await response.json()
+        alert(`Error: ${error.error || 'Failed to process command'}`)
       }
-    } else {
-      alert(`Voice command captured: "${command}" - Try saying "Add task: your task name"`)
+    } catch (error) {
+      console.error('Voice command error:', error)
+      alert(`Failed to process: "${command}"`)
     }
   }
 
