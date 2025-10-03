@@ -12,7 +12,7 @@ const openai = new OpenAI({
 })
 
 export interface VoiceCommand {
-  intent: 'create_task' | 'create_habit' | 'set_reminder' | 'query_status' | 'create_event' | 'query_calendar' | 'send_email' | 'read_emails' | 'query_inbox' | 'unknown'
+  intent: 'create_task' | 'create_habit' | 'set_reminder' | 'query_status' | 'create_event' | 'query_calendar' | 'send_email' | 'read_emails' | 'query_inbox' | 'complete_habit' | 'log_sleep' | 'rate_day' | 'daily_checkin' | 'unknown'
   entities: {
     taskTitle?: string
     habitName?: string
@@ -32,6 +32,10 @@ export interface VoiceCommand {
     emailSubject?: string
     emailBody?: string
     emailCount?: number
+    // Check-in entities
+    wakeTime?: string
+    sleepTime?: string
+    dayRating?: number
   }
   confidence: number
   originalText: string
@@ -57,7 +61,7 @@ export async function processVoiceCommand(transcript: string): Promise<VoiceComm
       messages: [
         {
           role: 'system',
-          content: `You are a voice command processor for a personal productivity assistant with Gmail and Calendar integration.
+          content: `You are a voice command processor for a personal productivity assistant with Gmail, Calendar, and habit tracking.
 Extract the intent and entities from user voice commands.
 
 Supported intents:
@@ -69,12 +73,16 @@ Supported intents:
 - send_email: Send an email
 - read_emails: Read/check emails
 - query_inbox: Ask about inbox
+- complete_habit: Mark a habit as complete
+- log_sleep: Log wake/sleep times
+- rate_day: Rate how the day went
+- daily_checkin: Complete daily check-in
 - query_status: General status query
 - unknown: Cannot understand
 
 Respond ONLY with valid JSON in this exact format:
 {
-  "intent": "create_task|create_habit|set_reminder|create_event|query_calendar|send_email|read_emails|query_inbox|query_status|unknown",
+  "intent": "create_task|create_habit|set_reminder|create_event|query_calendar|send_email|read_emails|query_inbox|complete_habit|log_sleep|rate_day|daily_checkin|query_status|unknown",
   "entities": {
     "taskTitle": "string",
     "habitName": "string",
@@ -91,7 +99,10 @@ Respond ONLY with valid JSON in this exact format:
     "emailRecipient": "email address",
     "emailSubject": "string",
     "emailBody": "string",
-    "emailCount": number
+    "emailCount": number,
+    "wakeTime": "HH:MM format",
+    "sleepTime": "HH:MM format",
+    "dayRating": number (1-10)
   },
   "confidence": 0.0-1.0
 }
@@ -101,7 +112,11 @@ Examples:
 - "What's on my calendar today?" → {"intent":"query_calendar","entities":{"query":"today"},"confidence":0.9}
 - "Send email to john@example.com saying meeting confirmed" → {"intent":"send_email","entities":{"emailRecipient":"john@example.com","emailBody":"meeting confirmed"},"confidence":0.9}
 - "Read my unread emails" → {"intent":"read_emails","entities":{"emailCount":10},"confidence":0.85}
-- "Add task: buy groceries" → {"intent":"create_task","entities":{"taskTitle":"buy groceries"},"confidence":0.95}`
+- "Add task: buy groceries" → {"intent":"create_task","entities":{"taskTitle":"buy groceries"},"confidence":0.95}
+- "I completed my reading habit" → {"intent":"complete_habit","entities":{"habitName":"reading"},"confidence":0.9}
+- "I woke up at 7am and went to bed at 11pm" → {"intent":"log_sleep","entities":{"wakeTime":"07:00","sleepTime":"23:00"},"confidence":0.95}
+- "Today was an 8 out of 10" → {"intent":"rate_day","entities":{"dayRating":8},"confidence":0.9}
+- "Start my daily check-in" → {"intent":"daily_checkin","entities":{},"confidence":0.95}`
         },
         {
           role: 'user',

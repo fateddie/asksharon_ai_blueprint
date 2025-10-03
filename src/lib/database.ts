@@ -7,7 +7,7 @@
 
 import { createClient as createBrowserClient } from '@/lib/supabase'
 import { createClient } from '@supabase/supabase-js'
-import type { Task, Habit, HabitEntry, Note, Goal } from '@/types'
+import type { Task, Habit, HabitEntry, Note, Goal, DailyCheckin } from '@/types'
 import type { Session } from 'next-auth'
 
 /**
@@ -452,6 +452,90 @@ export class GoalsService {
     } catch (err) {
       console.error('Goals delete error:', err)
       return false
+    }
+  }
+}
+
+/**
+ * Daily Check-ins Service
+ */
+export class DailyCheckinsService {
+  static async getToday(userId: string): Promise<DailyCheckin | null> {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const { data, error } = await getSupabaseClient()
+        .from('daily_checkins')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No data found - this is expected
+          return null
+        }
+        console.error('Error fetching today checkin:', error)
+        return null
+      }
+
+      return data
+    } catch (err) {
+      console.error('Daily checkin service error:', err)
+      return null
+    }
+  }
+
+  static async createOrUpdate(
+    userId: string,
+    checkin: Partial<Omit<DailyCheckin, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+  ): Promise<DailyCheckin | null> {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+
+      const { data, error } = await getSupabaseClient()
+        .from('daily_checkins')
+        .upsert({
+          user_id: userId,
+          date: today,
+          ...checkin
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error upserting checkin:', error)
+        return null
+      }
+
+      return data
+    } catch (err) {
+      console.error('Daily checkin upsert error:', err)
+      return null
+    }
+  }
+
+  static async getRecent(userId: string, days: number = 7): Promise<DailyCheckin[]> {
+    try {
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - days)
+
+      const { data, error } = await getSupabaseClient()
+        .from('daily_checkins')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('date', startDate.toISOString().split('T')[0])
+        .order('date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching recent checkins:', error)
+        return []
+      }
+
+      return data || []
+    } catch (err) {
+      console.error('Recent checkins service error:', err)
+      return []
     }
   }
 }

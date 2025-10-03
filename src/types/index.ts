@@ -42,6 +42,21 @@ export interface HabitEntry {
   completed_date: string
   completed_at: string
   notes?: string
+  entry_date?: string
+}
+
+export interface DailyCheckin {
+  id: string
+  user_id: string
+  date: string
+  wake_time?: string
+  sleep_time?: string
+  day_rating: number // 1-10 scale
+  mood?: string
+  notes?: string
+  habits_completed: string[] // habit_ids
+  created_at: string
+  updated_at: string
 }
 
 export interface Note {

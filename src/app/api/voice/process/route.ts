@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
 import { processVoiceCommand, generateVoiceResponse } from '@/lib/openai'
-import { TasksService, HabitsService } from '@/lib/database'
+import { TasksService, HabitsService, DailyCheckinsService } from '@/lib/database'
 import { generateUserUUID } from '@/lib/uuid'
 import { CalendarService } from '@/lib/calendar'
 import { GmailService } from '@/lib/gmail'
@@ -231,6 +231,103 @@ export async function POST(request: NextRequest) {
           result = {
             success: false,
             message: 'Please connect your Gmail account first'
+          }
+        }
+        break
+
+      case 'complete_habit':
+        if (command.entities.habitName) {
+          try {
+            // Find habit by name
+            const habits = await HabitsService.getAll(userId)
+            const habit = habits.find(h =>
+              h.name.toLowerCase().includes(command.entities.habitName!.toLowerCase())
+            )
+
+            if (habit) {
+              const entry = await HabitsService.logEntry({
+                habit_id: habit.id,
+                completed_date: new Date().toISOString(),
+                completed_at: new Date().toISOString()
+              })
+
+              result = {
+                success: !!entry,
+                habit,
+                message: entry ? `Great! Marked ${habit.name} as complete` : 'Failed to log habit'
+              }
+            } else {
+              result = {
+                success: false,
+                message: `Couldn't find habit: ${command.entities.habitName}`
+              }
+            }
+          } catch (error) {
+            result = {
+              success: false,
+              message: 'Failed to complete habit'
+            }
+          }
+        }
+        break
+
+      case 'log_sleep':
+        try {
+          const checkin = await DailyCheckinsService.createOrUpdate(userId, {
+            wake_time: command.entities.wakeTime,
+            sleep_time: command.entities.sleepTime
+          })
+
+          result = {
+            success: !!checkin,
+            checkin,
+            message: checkin ? 'Sleep times logged successfully' : 'Failed to log sleep times'
+          }
+        } catch (error) {
+          result = {
+            success: false,
+            message: 'Failed to log sleep times'
+          }
+        }
+        break
+
+      case 'rate_day':
+        if (command.entities.dayRating) {
+          try {
+            const checkin = await DailyCheckinsService.createOrUpdate(userId, {
+              day_rating: command.entities.dayRating
+            })
+
+            result = {
+              success: !!checkin,
+              checkin,
+              message: checkin ? `Day rated ${command.entities.dayRating}/10` : 'Failed to rate day'
+            }
+          } catch (error) {
+            result = {
+              success: false,
+              message: 'Failed to rate day'
+            }
+          }
+        }
+        break
+
+      case 'daily_checkin':
+        try {
+          const checkin = await DailyCheckinsService.getToday(userId)
+          const habits = await HabitsService.getAll(userId)
+          const activeHabits = habits.filter(h => h.is_active)
+
+          result = {
+            success: true,
+            checkin,
+            habits: activeHabits,
+            message: `Let's do your daily check-in! You have ${activeHabits.length} habits to track today`
+          }
+        } catch (error) {
+          result = {
+            success: false,
+            message: 'Failed to start daily check-in'
           }
         }
         break
