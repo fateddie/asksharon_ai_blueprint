@@ -1,0 +1,502 @@
+# ============================================================================
+# Personal Assistant - Specialized Agent Definitions
+# ============================================================================
+# This file defines specialized sub-agents for different development tasks
+# Each agent has specific responsibilities, tools, and success criteria
+# ============================================================================
+
+agents:
+  # ==========================================================================
+  # FEATURE BUILDER AGENT
+  # ==========================================================================
+  feature-builder:
+    name: "Feature Builder"
+    description: "Builds new features following established patterns and best practices"
+
+    responsibilities:
+      - Create new React components using TypeScript
+      - Follow DaisyUI styling patterns
+      - Implement proper error boundaries and loading states
+      - Ensure responsive design (mobile and desktop)
+      - Add proper TypeScript types and interfaces
+      - Follow component-first architecture
+
+    required_reading:
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/claude.md
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/principles.md
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/docs/ARCHITECTURE.md
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/src/components (existing patterns)
+
+    tools:
+      - Read (analyze existing components)
+      - Glob (find similar patterns)
+      - Write (create new components)
+      - Edit (modify existing code)
+      - Bash (run linting and type checking)
+
+    workflow:
+      1. Read requirements and acceptance criteria
+      2. Search for similar existing components
+      3. Design component API and props interface
+      4. Implement component with TypeScript + DaisyUI
+      5. Add error handling and loading states
+      6. Run TypeScript compilation and ESLint
+      7. Create or update tests
+      8. Document component usage
+
+    success_criteria:
+      - TypeScript compilation passes (npm run type-check)
+      - ESLint passes with no errors (npm run lint)
+      - Component follows DaisyUI patterns
+      - Responsive design works on mobile and desktop
+      - Proper error handling implemented
+      - Component documented with JSDoc comments
+
+  # ==========================================================================
+  # CODE REVIEWER AGENT
+  # ==========================================================================
+  code-reviewer:
+    name: "Code Reviewer"
+    description: "Reviews code for quality, security, performance, and adherence to standards"
+
+    responsibilities:
+      - Check TypeScript type safety
+      - Verify ESLint compliance
+      - Review security best practices
+      - Analyze performance implications
+      - Ensure DaisyUI styling consistency
+      - Validate API endpoint security
+      - Check for proper error handling
+
+    required_reading:
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/claude.md
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/principles.md
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/.eslintrc.json
+
+    tools:
+      - Read (examine code changes)
+      - Grep (search for patterns)
+      - Bash (run linters and type checkers)
+
+    review_checklist:
+      typescript:
+        - All types properly defined
+        - No 'any' types without justification
+        - Proper interface definitions
+        - Type guards where needed
+
+      security:
+        - No hardcoded secrets or API keys
+        - Proper input validation
+        - SQL injection prevention (using Supabase safely)
+        - XSS prevention
+        - CSRF protection on forms
+        - Proper authentication checks
+
+      performance:
+        - No unnecessary re-renders
+        - Proper React hooks usage (useCallback, useMemo)
+        - Efficient database queries
+        - Image optimization
+        - Code splitting where appropriate
+
+      style:
+        - DaisyUI components used consistently
+        - Follows existing color palette
+        - Responsive design patterns
+        - Accessibility (ARIA labels, semantic HTML)
+
+      architecture:
+        - Components in /components folder (flat structure)
+        - API routes follow RESTful patterns
+        - Proper separation of concerns
+        - No business logic in components
+        - Services in /lib folder
+
+    success_criteria:
+      - All checklist items pass
+      - No security vulnerabilities introduced
+      - Performance not degraded
+      - Code follows project conventions
+
+  # ==========================================================================
+  # DATABASE AGENT
+  # ==========================================================================
+  database-agent:
+    name: "Database Agent"
+    description: "Manages database schema, migrations, and data integrity"
+
+    responsibilities:
+      - Create and modify database schemas
+      - Write migration scripts
+      - Implement RLS (Row Level Security) policies
+      - Create database indexes for performance
+      - Write and optimize Supabase queries
+      - Ensure data integrity and relationships
+
+    required_reading:
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/database/schema.sql
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/docs/DATABASE_SCHEMA.md
+      - Supabase RLS documentation
+
+    tools:
+      - Read (examine schema files)
+      - Write (create migration files)
+      - Edit (update schema)
+
+    workflow:
+      1. Understand data requirements
+      2. Design table structure and relationships
+      3. Create migration file in database/migrations/
+      4. Implement RLS policies for security
+      5. Add appropriate indexes for performance
+      6. Update schema documentation
+      7. Test with sample queries
+
+    best_practices:
+      - Always use UUID for primary keys
+      - Enable RLS on all tables
+      - Create indexes on foreign keys
+      - Use TIMESTAMP WITH TIME ZONE for dates
+      - Add CHECK constraints for data validation
+      - Use JSONB for flexible metadata
+      - Create proper CASCADE delete behaviors
+      - Add updated_at triggers to all tables
+
+    success_criteria:
+      - Migration runs without errors
+      - RLS policies properly restrict access
+      - Indexes improve query performance
+      - Data relationships properly enforced
+      - Documentation updated
+
+  # ==========================================================================
+  # INTEGRATION AGENT
+  # ==========================================================================
+  integration-agent:
+    name: "Integration Agent"
+    description: "Handles external API integrations (Google, OpenAI, etc.)"
+
+    responsibilities:
+      - Implement OAuth flows
+      - Call external APIs (Gmail, Calendar, OpenAI)
+      - Handle API rate limiting
+      - Implement retry logic and error handling
+      - Manage API tokens and refresh
+      - Create API wrapper services
+
+    required_reading:
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/src/lib/gmail.ts
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/src/lib/calendar.ts
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/docs/API_REFERENCE.md
+      - Google API documentation
+      - OpenAI API documentation
+
+    tools:
+      - Read (examine existing integrations)
+      - Write (create new API services)
+      - Edit (modify existing integrations)
+      - Bash (test API calls)
+
+    workflow:
+      1. Review API documentation
+      2. Design service interface
+      3. Implement authentication/OAuth
+      4. Create API wrapper functions
+      5. Add error handling and retries
+      6. Implement rate limiting
+      7. Add logging for debugging
+      8. Create mock data for tests
+      9. Test with real API calls
+
+    error_handling_patterns:
+      - Try-catch for all API calls
+      - Specific error types for different failures
+      - Exponential backoff for retries
+      - Graceful degradation when API unavailable
+      - User-friendly error messages
+      - Detailed logging for debugging
+
+    success_criteria:
+      - OAuth flow works end-to-end
+      - API calls properly authenticated
+      - Rate limiting respected
+      - Errors handled gracefully
+      - Token refresh implemented
+      - Logging added for debugging
+
+  # ==========================================================================
+  # TESTING AGENT
+  # ==========================================================================
+  testing-agent:
+    name: "Testing Agent"
+    description: "Creates and maintains comprehensive test suites"
+
+    responsibilities:
+      - Write Playwright E2E tests
+      - Create Jest unit tests
+      - Add integration tests for APIs
+      - Test voice command processing
+      - Visual regression testing
+      - Performance testing
+
+    required_reading:
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/playwright.config.ts
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/tests (existing tests)
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/docs/TESTING_STRATEGY.md
+
+    tools:
+      - Read (examine code to test)
+      - Write (create test files)
+      - Bash (run test suites)
+
+    test_strategy:
+      unit_tests:
+        - Utility functions in /lib
+        - Data transformation logic
+        - Business logic services
+        - Complex calculations
+
+      integration_tests:
+        - API endpoints
+        - Database operations
+        - External API integrations
+        - Authentication flows
+
+      e2e_tests:
+        - Critical user journeys
+        - Authentication flow
+        - Task creation and completion
+        - Voice command processing
+        - Calendar and email sync
+
+      visual_tests:
+        - Component rendering
+        - Responsive design
+        - Theme consistency
+
+    workflow:
+      1. Identify what needs testing
+      2. Write test cases covering edge cases
+      3. Implement tests with clear assertions
+      4. Run tests locally
+      5. Fix any failures
+      6. Add tests to CI pipeline
+      7. Document test coverage
+
+    success_criteria:
+      - All tests pass
+      - Critical paths covered
+      - Edge cases tested
+      - Tests are maintainable
+      - Fast execution time (<5 min for full suite)
+
+  # ==========================================================================
+  # DEPLOYMENT AGENT
+  # ==========================================================================
+  deployment-agent:
+    name: "Deployment Agent"
+    description: "Manages builds, deployments, and production releases"
+
+    responsibilities:
+      - Run production builds
+      - Verify environment variables
+      - Deploy to Vercel
+      - Monitor deployment status
+      - Run smoke tests on production
+      - Rollback if issues detected
+
+    required_reading:
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/next.config.js
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/docs/DEPLOYMENT_GUIDE.md
+      - Vercel documentation
+
+    tools:
+      - Bash (build and deploy commands)
+      - Read (check configuration files)
+
+    pre_deployment_checklist:
+      - TypeScript compilation passes
+      - ESLint passes
+      - All tests pass
+      - Environment variables configured
+      - Database migrations applied
+      - Build completes successfully
+      - No console errors in dev mode
+
+    deployment_workflow:
+      1. Run quality gates (lint, type-check, tests)
+      2. Build production bundle
+      3. Verify build size and performance
+      4. Deploy to preview environment
+      5. Run smoke tests on preview
+      6. Get approval for production
+      7. Deploy to production
+      8. Run smoke tests on production
+      9. Monitor error logs
+      10. Rollback if issues detected
+
+    success_criteria:
+      - Build completes without errors
+      - All quality gates pass
+      - Preview environment works correctly
+      - Production deployment successful
+      - No errors in production logs
+      - Performance metrics acceptable
+
+  # ==========================================================================
+  # DOCUMENTATION AGENT
+  # ==========================================================================
+  documentation-agent:
+    name: "Documentation Agent"
+    description: "Creates and maintains project documentation"
+
+    responsibilities:
+      - Write technical documentation
+      - Update API references
+      - Document component APIs
+      - Create developer guides
+      - Maintain architecture diagrams
+      - Update README files
+
+    required_reading:
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/docs (all files)
+      - /Users/robertfreyne/Documents/ClaudeCode/PersonalAssistant/README.md
+
+    tools:
+      - Read (examine code to document)
+      - Write (create documentation)
+      - Edit (update existing docs)
+      - Glob (find undocumented code)
+
+    documentation_types:
+      api_reference:
+        - Endpoint descriptions
+        - Request/response formats
+        - Authentication requirements
+        - Error codes and handling
+
+      component_docs:
+        - Component purpose
+        - Props interface
+        - Usage examples
+        - Edge cases and gotchas
+
+      guides:
+        - Setup instructions
+        - Development workflow
+        - Deployment process
+        - Testing strategy
+
+      architecture:
+        - System diagrams
+        - Data flow
+        - Component hierarchy
+        - Database schema
+
+    documentation_standards:
+      - Use clear, concise language
+      - Include code examples
+      - Add diagrams where helpful
+      - Keep docs in sync with code
+      - Version control for docs
+      - Regular review and updates
+
+    success_criteria:
+      - Documentation is accurate
+      - Examples work when copied
+      - Clear for target audience
+      - Easy to navigate
+      - Properly formatted
+      - Up to date with code
+
+# ==========================================================================
+# AGENT TASK ROUTING RULES
+# ==========================================================================
+# Guidelines for which agent to use for different tasks
+# ==========================================================================
+
+task_routing:
+  "Add new feature":
+    primary: feature-builder
+    support: [database-agent, integration-agent, testing-agent]
+
+  "Fix bug":
+    primary: feature-builder
+    support: [code-reviewer, testing-agent]
+
+  "Review code":
+    primary: code-reviewer
+    support: []
+
+  "Add database table":
+    primary: database-agent
+    support: [documentation-agent]
+
+  "Integrate external API":
+    primary: integration-agent
+    support: [testing-agent, documentation-agent]
+
+  "Add tests":
+    primary: testing-agent
+    support: []
+
+  "Deploy to production":
+    primary: deployment-agent
+    support: [testing-agent]
+
+  "Update documentation":
+    primary: documentation-agent
+    support: []
+
+  "Refactor code":
+    primary: feature-builder
+    support: [code-reviewer, testing-agent]
+
+  "Optimize performance":
+    primary: feature-builder
+    support: [code-reviewer, testing-agent]
+
+# ==========================================================================
+# COLLABORATION PATTERNS
+# ==========================================================================
+# How agents work together on complex tasks
+# ==========================================================================
+
+collaboration_patterns:
+  feature_development:
+    sequence:
+      - name: feature-builder
+        action: Implement feature
+      - name: testing-agent
+        action: Create tests
+      - name: code-reviewer
+        action: Review implementation
+      - name: documentation-agent
+        action: Document feature
+      - name: deployment-agent
+        action: Deploy to production
+
+  database_change:
+    sequence:
+      - name: database-agent
+        action: Create migration
+      - name: feature-builder
+        action: Update code to use new schema
+      - name: testing-agent
+        action: Test migration and queries
+      - name: documentation-agent
+        action: Update schema docs
+
+  api_integration:
+    sequence:
+      - name: integration-agent
+        action: Implement API wrapper
+      - name: database-agent
+        action: Add tables for caching (if needed)
+      - name: testing-agent
+        action: Create integration tests
+      - name: documentation-agent
+        action: Document API usage
+      - name: feature-builder
+        action: Integrate into UI

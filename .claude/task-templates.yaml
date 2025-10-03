@@ -1,0 +1,504 @@
+# ============================================================================
+# Personal Assistant - Reusable Task Templates
+# ============================================================================
+# This file contains templates for common development tasks
+# Copy and customize these prompts for your specific needs
+# ============================================================================
+
+templates:
+  # ==========================================================================
+  # NEW FEATURE TEMPLATE
+  # ==========================================================================
+  new_feature:
+    name: "Implement New Feature"
+    agent: feature-builder
+    prompt_template: |
+      I want to implement a new feature: {feature_name}
+
+      **User Story:**
+      {user_story}
+
+      **Acceptance Criteria:**
+      {acceptance_criteria}
+
+      **Technical Requirements:**
+      {technical_requirements}
+
+      **Please:**
+      1. Review existing similar components in /src/components
+      2. Design the component API following our patterns
+      3. Implement using TypeScript + DaisyUI
+      4. Add proper error handling and loading states
+      5. Ensure responsive design (mobile and desktop)
+      6. Create/update tests
+      7. Run quality gates (lint, type-check)
+      8. Document the component
+
+      **Follow:**
+      - Project guidelines in claude.md
+      - Development principles in principles.md
+      - Existing component patterns
+      - DaisyUI styling system
+
+    variables:
+      - feature_name
+      - user_story
+      - acceptance_criteria
+      - technical_requirements
+
+    example: |
+      feature_name: "Smart Task Prioritization"
+      user_story: "As a user, I want the app to suggest which tasks I should focus on based on due dates, priority, and my calendar"
+      acceptance_criteria:
+        - Shows top 3 recommended tasks on dashboard
+        - Takes into account due dates, priority level, and available time
+        - Updates in real-time when tasks or calendar changes
+        - Provides explanation for why task was recommended
+      technical_requirements:
+        - New algorithm in /src/lib/task-prioritizer.ts
+        - New component in /src/components/features/SmartPriority.tsx
+        - Integration with existing TaskManager and Calendar components
+        - Uses AI (OpenAI) for contextual recommendations
+
+  # ==========================================================================
+  # BUG FIX TEMPLATE
+  # ==========================================================================
+  bug_fix:
+    name: "Fix Bug"
+    agent: feature-builder
+    prompt_template: |
+      I need to fix a bug: {bug_title}
+
+      **Problem Description:**
+      {problem_description}
+
+      **Steps to Reproduce:**
+      {reproduction_steps}
+
+      **Expected Behavior:**
+      {expected_behavior}
+
+      **Actual Behavior:**
+      {actual_behavior}
+
+      **Error Messages/Logs:**
+      {error_logs}
+
+      **Please:**
+      1. Reproduce the issue
+      2. Identify root cause
+      3. Propose minimal fix
+      4. Implement fix with tests
+      5. Verify fix doesn't break existing functionality
+      6. Add regression test to prevent recurrence
+
+      **Priority:** {priority}
+
+    variables:
+      - bug_title
+      - problem_description
+      - reproduction_steps
+      - expected_behavior
+      - actual_behavior
+      - error_logs
+      - priority
+
+    example: |
+      bug_title: "Dashboard crashes when loading with no Google account connected"
+      problem_description: "White screen appears instead of dashboard when user is authenticated but hasn't connected Google account"
+      reproduction_steps:
+        1. Sign in to app without Google OAuth
+        2. Navigate to dashboard
+        3. Page shows white screen
+      expected_behavior: "Dashboard should show Google connection prompt and allow basic features"
+      actual_behavior: "White screen with console errors about undefined properties"
+      error_logs: "TypeError: Cannot read property 'hasGoogleAccess' of undefined"
+      priority: "high"
+
+  # ==========================================================================
+  # DATABASE CHANGE TEMPLATE
+  # ==========================================================================
+  database_change:
+    name: "Add/Modify Database Schema"
+    agent: database-agent
+    prompt_template: |
+      I need to make a database change: {change_description}
+
+      **Reason:**
+      {reason}
+
+      **Tables Affected:**
+      {tables_affected}
+
+      **Proposed Schema:**
+      {proposed_schema}
+
+      **Please:**
+      1. Review existing schema in database/schema.sql
+      2. Create migration file in database/migrations/{timestamp}_{name}.sql
+      3. Include both UP and DOWN migrations
+      4. Add appropriate RLS policies
+      5. Create indexes for performance
+      6. Update DATABASE_SCHEMA.md documentation
+      7. Test migration in development
+
+      **Requirements:**
+      - Use UUID for all primary keys
+      - Enable RLS on new tables
+      - Add updated_at triggers
+      - Include proper foreign key constraints
+      - Add CHECK constraints for data validation
+
+    variables:
+      - change_description
+      - reason
+      - tables_affected
+      - proposed_schema
+
+    example: |
+      change_description: "Add team collaboration tables for multi-user workspaces"
+      reason: "Enable users to share projects and tasks with team members (Phase 3 feature)"
+      tables_affected: "New tables: teams, team_members, team_invitations"
+      proposed_schema: |
+        CREATE TABLE teams (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          name TEXT NOT NULL,
+          owner_id UUID REFERENCES auth.users(id),
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+  # ==========================================================================
+  # API INTEGRATION TEMPLATE
+  # ==========================================================================
+  api_integration:
+    name: "Integrate External API"
+    agent: integration-agent
+    prompt_template: |
+      I want to integrate: {api_name}
+
+      **Purpose:**
+      {purpose}
+
+      **API Documentation:**
+      {api_docs_url}
+
+      **Authentication Method:**
+      {auth_method}
+
+      **Endpoints to Implement:**
+      {endpoints}
+
+      **Please:**
+      1. Review API documentation
+      2. Create service wrapper in /src/lib/{api_name}.ts
+      3. Implement authentication/OAuth flow
+      4. Add error handling with retries
+      5. Implement rate limiting
+      6. Add TypeScript types for responses
+      7. Create mock data for tests
+      8. Test with real API calls
+      9. Document usage in API_REFERENCE.md
+
+      **Requirements:**
+      - Secure token storage
+      - Graceful error handling
+      - User-friendly error messages
+      - Logging for debugging
+      - Proper TypeScript types
+
+    variables:
+      - api_name
+      - purpose
+      - api_docs_url
+      - auth_method
+      - endpoints
+
+    example: |
+      api_name: "Notion API"
+      purpose: "Allow users to sync tasks and notes with Notion workspace"
+      api_docs_url: "https://developers.notion.com"
+      auth_method: "OAuth 2.0"
+      endpoints:
+        - GET /v1/databases - List databases
+        - POST /v1/pages - Create page
+        - PATCH /v1/pages/{id} - Update page
+
+  # ==========================================================================
+  # CODE REVIEW TEMPLATE
+  # ==========================================================================
+  code_review:
+    name: "Review Code Changes"
+    agent: code-reviewer
+    prompt_template: |
+      Please review the following changes: {change_description}
+
+      **Files Changed:**
+      {files_changed}
+
+      **Purpose of Changes:**
+      {purpose}
+
+      **Please Check:**
+      1. TypeScript type safety (no 'any' without justification)
+      2. Security (no hardcoded secrets, proper validation, XSS/CSRF prevention)
+      3. Performance (no unnecessary re-renders, efficient queries)
+      4. Style consistency (DaisyUI components, existing patterns)
+      5. Error handling (try-catch, user-friendly messages)
+      6. Accessibility (ARIA labels, semantic HTML)
+      7. Testing (tests added or updated)
+      8. Documentation (comments, README updates)
+
+      **Focus Areas:**
+      {focus_areas}
+
+    variables:
+      - change_description
+      - files_changed
+      - purpose
+      - focus_areas
+
+    example: |
+      change_description: "Add voice command processing with OpenAI"
+      files_changed:
+        - src/lib/voice-processor.ts (new)
+        - src/app/api/voice/route.ts (new)
+        - src/components/features/VoiceControl.tsx (modified)
+      purpose: "Enable natural language processing of voice commands using GPT-4"
+      focus_areas:
+        - API key security (ensure not exposed to client)
+        - Rate limiting (prevent abuse)
+        - Error handling (API failures, timeout)
+        - Cost control (token usage monitoring)
+
+  # ==========================================================================
+  # TESTING TEMPLATE
+  # ==========================================================================
+  add_tests:
+    name: "Add Tests"
+    agent: testing-agent
+    prompt_template: |
+      I need to add tests for: {component_or_feature}
+
+      **Type of Tests:**
+      {test_types}
+
+      **Test Cases:**
+      {test_cases}
+
+      **Please:**
+      1. Review code to understand behavior
+      2. Write comprehensive test cases
+      3. Include edge cases and error scenarios
+      4. Use appropriate test framework:
+         - Playwright for E2E tests (tests/*.spec.ts)
+         - Jest for unit tests (*.test.ts)
+      5. Run tests locally and ensure they pass
+      6. Document test coverage
+
+      **Coverage Goals:**
+      {coverage_goals}
+
+    variables:
+      - component_or_feature
+      - test_types
+      - test_cases
+      - coverage_goals
+
+    example: |
+      component_or_feature: "Voice Command Processor"
+      test_types:
+        - Unit tests for command parsing
+        - Integration tests for OpenAI API
+        - E2E tests for full voice flow
+      test_cases:
+        - Parse "add task X" command correctly
+        - Handle ambiguous commands gracefully
+        - Retry on API failure
+        - Show error message on timeout
+        - Process multiple commands in sequence
+      coverage_goals:
+        - 90% code coverage for core logic
+        - All critical paths tested
+        - All error scenarios covered
+
+  # ==========================================================================
+  # REFACTORING TEMPLATE
+  # ==========================================================================
+  refactor:
+    name: "Refactor Code"
+    agent: feature-builder
+    prompt_template: |
+      I want to refactor: {component_or_module}
+
+      **Current Issues:**
+      {current_issues}
+
+      **Refactoring Goals:**
+      {goals}
+
+      **Constraints:**
+      {constraints}
+
+      **Please:**
+      1. Analyze current implementation
+      2. Propose refactoring approach
+      3. Identify risks and dependencies
+      4. Implement changes incrementally
+      5. Ensure tests still pass
+      6. Add regression tests if needed
+      7. Update documentation
+
+      **Success Criteria:**
+      {success_criteria}
+
+    variables:
+      - component_or_module
+      - current_issues
+      - goals
+      - constraints
+      - success_criteria
+
+    example: |
+      component_or_module: "TaskManager component"
+      current_issues:
+        - Component is 500+ lines (too large)
+        - Mixes data fetching with UI logic
+        - Difficult to test in isolation
+        - Performance issues with large task lists
+      goals:
+        - Split into smaller, focused components
+        - Extract data fetching to custom hook
+        - Improve performance with virtualization
+        - Make components more testable
+      constraints:
+        - Must maintain current functionality
+        - Cannot break existing API contracts
+        - Must complete in one session
+      success_criteria:
+        - Component under 200 lines
+        - All existing tests pass
+        - Performance improves by 50%
+        - Each sub-component independently testable
+
+  # ==========================================================================
+  # DOCUMENTATION TEMPLATE
+  # ==========================================================================
+  document_feature:
+    name: "Document Feature or API"
+    agent: documentation-agent
+    prompt_template: |
+      I need documentation for: {feature_or_api}
+
+      **Target Audience:**
+      {audience}
+
+      **What to Document:**
+      {scope}
+
+      **Please:**
+      1. Review code implementation
+      2. Create/update documentation file
+      3. Include:
+         - Overview and purpose
+         - Usage examples (with code)
+         - API reference (if applicable)
+         - Configuration options
+         - Common use cases
+         - Troubleshooting tips
+      4. Use clear, concise language
+      5. Add diagrams if helpful
+      6. Link to related documentation
+
+      **Output Location:**
+      {output_path}
+
+    variables:
+      - feature_or_api
+      - audience
+      - scope
+      - output_path
+
+    example: |
+      feature_or_api: "Voice Command System"
+      audience: "Developers adding new voice commands"
+      scope:
+        - How voice recognition works
+        - Command parsing logic
+        - Adding new command types
+        - OpenAI integration details
+        - Testing voice commands
+      output_path: "docs/VOICE_COMMANDS.md"
+
+  # ==========================================================================
+  # DEPLOYMENT TEMPLATE
+  # ==========================================================================
+  deploy:
+    name: "Deploy to Production"
+    agent: deployment-agent
+    prompt_template: |
+      I want to deploy version: {version}
+
+      **Changes in This Release:**
+      {changes}
+
+      **Pre-Deployment Checklist:**
+      - [ ] All tests passing
+      - [ ] TypeScript compilation successful
+      - [ ] ESLint passing
+      - [ ] Environment variables configured
+      - [ ] Database migrations applied
+      - [ ] Rollback plan ready
+
+      **Please:**
+      1. Run all quality gates (lint, type-check, tests)
+      2. Build production bundle
+      3. Deploy to Vercel preview environment
+      4. Run smoke tests on preview
+      5. Get approval for production deployment
+      6. Deploy to production
+      7. Monitor error logs for 15 minutes
+      8. Report deployment status
+
+      **Rollback Plan:**
+      {rollback_plan}
+
+    variables:
+      - version
+      - changes
+      - rollback_plan
+
+    example: |
+      version: "v1.2.0"
+      changes:
+        - Voice command processing with OpenAI
+        - Smart task prioritization
+        - Google Calendar webhook integration
+        - Performance improvements for dashboard
+      rollback_plan: "Use Vercel instant rollback to previous deployment if errors exceed 5% of requests"
+
+# ==========================================================================
+# QUICK REFERENCE
+# ==========================================================================
+quick_reference:
+  common_commands:
+    - "npm run dev - Start development server"
+    - "npm run build - Build for production"
+    - "npm run lint - Run ESLint"
+    - "npm run type-check - TypeScript compilation check"
+    - "npm run test - Run Playwright tests"
+
+  file_locations:
+    components: "/src/components"
+    api_routes: "/src/app/api"
+    lib_services: "/src/lib"
+    types: "/src/types"
+    database: "/database"
+    docs: "/docs"
+    tests: "/tests"
+
+  naming_conventions:
+    components: "PascalCase (e.g., TaskManager.tsx)"
+    files: "kebab-case (e.g., voice-processor.ts)"
+    api_routes: "kebab-case (e.g., /api/voice-commands)"
+    database_tables: "snake_case (e.g., habit_entries)"
+    environment_vars: "SCREAMING_SNAKE_CASE (e.g., NEXT_PUBLIC_SUPABASE_URL)"

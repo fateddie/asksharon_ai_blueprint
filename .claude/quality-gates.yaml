@@ -1,0 +1,374 @@
+# ============================================================================
+# Personal Assistant - Quality Gates Configuration
+# ============================================================================
+# Automated checks that must pass before commits and deployments
+# These gates ensure code quality, security, and functionality
+# ============================================================================
+
+quality_gates:
+  # ==========================================================================
+  # PRE-COMMIT GATES
+  # ==========================================================================
+  # Run these before every commit
+  # ==========================================================================
+  pre_commit:
+    name: "Pre-Commit Quality Gates"
+    description: "Fast checks run before each commit"
+
+    gates:
+      - name: "TypeScript Compilation"
+        command: "npm run type-check"
+        timeout: 30
+        blocking: true
+        error_message: "TypeScript compilation failed. Fix type errors before committing."
+
+      - name: "ESLint"
+        command: "npm run lint"
+        timeout: 20
+        blocking: true
+        error_message: "ESLint found errors. Run 'npm run lint' to see details."
+
+      - name: "Prettier Formatting"
+        command: "npx prettier --check 'src/**/*.{ts,tsx}'"
+        timeout: 15
+        blocking: false
+        error_message: "Code formatting issues found. Run 'npx prettier --write .' to fix."
+
+      - name: "No Console Logs in Production Code"
+        command: "! grep -r 'console.log' src --exclude-dir=node_modules || true"
+        timeout: 5
+        blocking: false
+        error_message: "Remove console.log statements from production code."
+
+      - name: "No Hardcoded Secrets"
+        command: "! grep -rE '(sk-|pk_live_|ghp_|gho_)' src --exclude-dir=node_modules || true"
+        timeout: 5
+        blocking: true
+        error_message: "Potential hardcoded secrets detected. Never commit API keys!"
+
+    success_message: "✅ All pre-commit checks passed!"
+    failure_action: "Block commit and show errors"
+
+  # ==========================================================================
+  # PRE-PUSH GATES
+  # ==========================================================================
+  # Run these before pushing to remote
+  # ==========================================================================
+  pre_push:
+    name: "Pre-Push Quality Gates"
+    description: "More thorough checks before pushing to remote"
+
+    gates:
+      - name: "Build Production Bundle"
+        command: "npm run build"
+        timeout: 120
+        blocking: true
+        error_message: "Production build failed. Fix build errors before pushing."
+
+      - name: "Unit Tests"
+        command: "npm run test:unit"
+        timeout: 60
+        blocking: true
+        error_message: "Unit tests failed. Fix failing tests before pushing."
+        continue_on_skip: true
+
+      - name: "Dependency Audit"
+        command: "npm audit --audit-level=high"
+        timeout: 30
+        blocking: false
+        error_message: "High severity vulnerabilities found in dependencies."
+
+      - name: "Bundle Size Check"
+        command: "node scripts/check-bundle-size.js"
+        timeout: 10
+        blocking: false
+        error_message: "Bundle size exceeds threshold. Optimize before pushing."
+        continue_on_skip: true
+
+    success_message: "✅ All pre-push checks passed!"
+    failure_action: "Warn user but allow push"
+
+  # ==========================================================================
+  # PRE-DEPLOYMENT GATES
+  # ==========================================================================
+  # Run these before deploying to production
+  # ==========================================================================
+  pre_deployment:
+    name: "Pre-Deployment Quality Gates"
+    description: "Critical checks before production deployment"
+
+    gates:
+      - name: "All Tests Pass"
+        command: "npm run test"
+        timeout: 300
+        blocking: true
+        error_message: "Test suite failed. All tests must pass before deployment."
+
+      - name: "TypeScript Strict Mode"
+        command: "npm run type-check"
+        timeout: 30
+        blocking: true
+        error_message: "TypeScript errors found. Fix all type errors before deployment."
+
+      - name: "Security Audit"
+        command: "npm audit --audit-level=moderate"
+        timeout: 30
+        blocking: true
+        error_message: "Security vulnerabilities found. Fix before deploying."
+
+      - name: "Environment Variables Check"
+        command: "node scripts/check-env-vars.js"
+        timeout: 5
+        blocking: true
+        error_message: "Required environment variables missing."
+
+      - name: "Database Migrations Up to Date"
+        command: "node scripts/check-migrations.js"
+        timeout: 10
+        blocking: true
+        error_message: "Pending database migrations. Apply all migrations before deployment."
+        continue_on_skip: true
+
+      - name: "No Debug Code"
+        command: "! grep -r 'debugger' src --exclude-dir=node_modules && ! grep -r 'console.warn' src --exclude-dir=node_modules"
+        timeout: 5
+        blocking: false
+        error_message: "Debug code found in source. Remove before deployment."
+
+      - name: "Performance Budget"
+        command: "node scripts/check-performance.js"
+        timeout: 30
+        blocking: false
+        error_message: "Performance budget exceeded. Optimize before deployment."
+        continue_on_skip: true
+
+    success_message: "✅ All deployment checks passed! Ready to deploy."
+    failure_action: "Block deployment and notify team"
+
+# ==========================================================================
+# CODE QUALITY STANDARDS
+# ==========================================================================
+code_standards:
+  typescript:
+    strict_mode: true
+    no_any: "warn"
+    no_explicit_any: "error"
+    no_unused_vars: "error"
+    prefer_const: "error"
+
+  eslint:
+    rules:
+      - "react-hooks/rules-of-hooks: error"
+      - "react-hooks/exhaustive-deps: warn"
+      - "no-console: warn"
+      - "no-debugger: error"
+      - "prefer-const: error"
+
+  formatting:
+    tool: "prettier"
+    semi: true
+    single_quote: true
+    trailing_comma: "es5"
+    tab_width: 2
+    print_width: 100
+
+  file_structure:
+    components: "/src/components (flat structure, no deep nesting)"
+    api_routes: "/src/app/api"
+    utilities: "/src/lib"
+    types: "/src/types"
+    tests: "/tests"
+
+  naming_conventions:
+    components: "PascalCase"
+    files: "kebab-case"
+    functions: "camelCase"
+    constants: "SCREAMING_SNAKE_CASE"
+    types: "PascalCase"
+
+# ==========================================================================
+# SECURITY CHECKLIST
+# ==========================================================================
+security_checklist:
+  authentication:
+    - "All API routes check authentication"
+    - "User ID validation in all database queries"
+    - "No hardcoded user IDs or test accounts in production"
+    - "Session tokens properly secured"
+
+  data_protection:
+    - "RLS policies enabled on all tables"
+    - "Sensitive data encrypted at rest"
+    - "No PII in logs or error messages"
+    - "Proper CORS configuration"
+
+  api_security:
+    - "API keys stored in environment variables only"
+    - "Rate limiting on all public endpoints"
+    - "Input validation on all user data"
+    - "SQL injection prevention (use parameterized queries)"
+    - "XSS prevention (proper escaping)"
+    - "CSRF protection on forms"
+
+  external_apis:
+    - "OAuth tokens stored securely"
+    - "Token refresh implemented"
+    - "API secrets never exposed to client"
+    - "Proper error handling doesn't leak sensitive info"
+
+# ==========================================================================
+# PERFORMANCE STANDARDS
+# ==========================================================================
+performance_standards:
+  page_load:
+    first_contentful_paint: "< 1.5s"
+    largest_contentful_paint: "< 2.5s"
+    time_to_interactive: "< 3.5s"
+    cumulative_layout_shift: "< 0.1"
+
+  bundle_size:
+    total_js: "< 250KB gzipped"
+    total_css: "< 50KB gzipped"
+    largest_chunk: "< 150KB gzipped"
+
+  runtime:
+    api_response_time: "< 200ms (p95)"
+    database_query_time: "< 100ms (p95)"
+    re_render_time: "< 16ms"
+
+  accessibility:
+    lighthouse_score: "> 90"
+    wcag_level: "AA"
+    keyboard_navigation: "100% coverage"
+    screen_reader_support: "full"
+
+# ==========================================================================
+# TEST COVERAGE REQUIREMENTS
+# ==========================================================================
+test_coverage:
+  minimum_coverage:
+    statements: 70
+    branches: 65
+    functions: 70
+    lines: 70
+
+  critical_paths:
+    coverage_required: 95
+    paths:
+      - "Authentication flow"
+      - "Task creation and completion"
+      - "Voice command processing"
+      - "Data synchronization"
+      - "Payment processing (future)"
+
+  test_types:
+    unit_tests:
+      location: "**/*.test.ts"
+      framework: "Jest"
+      required: true
+
+    integration_tests:
+      location: "**/*.integration.test.ts"
+      framework: "Jest"
+      required: true
+
+    e2e_tests:
+      location: "tests/**/*.spec.ts"
+      framework: "Playwright"
+      required: true
+
+    visual_tests:
+      location: "tests/**/*.visual.spec.ts"
+      framework: "Playwright"
+      required: false
+
+# ==========================================================================
+# DOCUMENTATION REQUIREMENTS
+# ==========================================================================
+documentation_requirements:
+  components:
+    - "JSDoc comment with description"
+    - "Props interface documented"
+    - "Usage example in comment or README"
+
+  api_endpoints:
+    - "Request/response types documented"
+    - "Authentication requirements specified"
+    - "Error responses documented"
+    - "Example requests provided"
+
+  functions:
+    - "JSDoc comment for public functions"
+    - "Parameter types and descriptions"
+    - "Return type and description"
+    - "Throws documentation for errors"
+
+  database:
+    - "Table purpose documented in schema"
+    - "Column descriptions in DATABASE_SCHEMA.md"
+    - "Relationships and constraints explained"
+    - "Migration notes for significant changes"
+
+# ==========================================================================
+# AUTOMATED GATE SCRIPTS
+# ==========================================================================
+# These scripts should be created in /scripts folder
+# ==========================================================================
+required_scripts:
+  - name: "check-env-vars.js"
+    purpose: "Verify all required environment variables are set"
+
+  - name: "check-bundle-size.js"
+    purpose: "Ensure bundle size stays under threshold"
+
+  - name: "check-migrations.js"
+    purpose: "Verify database migrations are up to date"
+
+  - name: "check-performance.js"
+    purpose: "Run Lighthouse and check performance metrics"
+
+  - name: "pre-commit.sh"
+    purpose: "Run all pre-commit gates"
+
+  - name: "pre-push.sh"
+    purpose: "Run all pre-push gates"
+
+  - name: "pre-deploy.sh"
+    purpose: "Run all pre-deployment gates"
+
+# ==========================================================================
+# NOTIFICATIONS AND REPORTING
+# ==========================================================================
+notifications:
+  on_failure:
+    console: true
+    file: "quality-gate-failures.log"
+    slack: false  # Configure when team collaboration starts
+
+  on_success:
+    console: true
+    file: false
+
+  metrics:
+    track_gate_run_times: true
+    track_failure_rates: true
+    generate_weekly_report: true
+
+# ==========================================================================
+# EXEMPTIONS AND OVERRIDES
+# ==========================================================================
+exemptions:
+  allowed_console_logs:
+    - "src/lib/logger.ts"
+
+  allowed_any_types:
+    - "src/types/speech-simple.d.ts"  # External library types
+
+  skip_tests_for:
+    - "*.stories.tsx"  # Storybook files
+    - "*.config.ts"  # Configuration files
+
+  manual_override:
+    enabled: false
+    requires_reason: true
+    log_overrides: true
