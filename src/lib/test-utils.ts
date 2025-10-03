@@ -219,9 +219,11 @@ export const requireEnvVar = (name: string): string => {
 // ============================================================================
 // Mock Fetch Helper
 // ============================================================================
+// Note: For Jest tests, you'll need to install @types/jest
+// For Playwright, use page.route() instead
 
 export const createMockFetch = (responses: Record<string, any>) => {
-  return jest.fn((url: string, options?: any) => {
+  return ((url: string, options?: any) => {
     const key = `${options?.method || 'GET'} ${url}`
     const response = responses[key] || responses[url]
 
@@ -237,7 +239,7 @@ export const createMockFetch = (responses: Record<string, any>) => {
       text: async () => JSON.stringify(response.data),
       headers: new Headers(response.headers || {})
     })
-  })
+  }) as typeof fetch
 }
 
 // ============================================================================
@@ -251,9 +253,9 @@ export const suppressConsole = () => {
     error: console.error
   }
 
-  console.log = jest.fn()
-  console.warn = jest.fn()
-  console.error = jest.fn()
+  console.log = () => {}
+  console.warn = () => {}
+  console.error = () => {}
 
   return () => {
     console.log = originalConsole.log
