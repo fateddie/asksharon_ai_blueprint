@@ -100,9 +100,18 @@ export function VoiceControl({ onCommand, className, prominent = false }: VoiceC
       recognition.stop()
       setIsListening(false)
     } else {
-      recognition.start()
-      setIsListening(true)
-      setTranscript('')
+      try {
+        recognition.start()
+        setIsListening(true)
+        setTranscript('')
+      } catch (error: any) {
+        // If already started, just update state
+        if (error.message?.includes('already started')) {
+          setIsListening(true)
+        } else {
+          console.error('Error starting recognition:', error)
+        }
+      }
     }
   }, [recognition, isListening])
 

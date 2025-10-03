@@ -4,6 +4,8 @@ import { authOptions } from '../../auth/[...nextauth]/route'
 import { processVoiceCommand, generateVoiceResponse } from '@/lib/openai'
 import { TasksService, HabitsService } from '@/lib/database'
 import { generateUserUUID } from '@/lib/uuid'
+import { CalendarService } from '@/lib/calendar'
+import { GmailService } from '@/lib/gmail'
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,6 +100,137 @@ export async function POST(request: NextRequest) {
             success: !!task,
             task,
             message: task ? `Reminder set for "${command.entities.taskTitle}"` : 'Failed to set reminder'
+          }
+        }
+        break
+
+      case 'create_event':
+        if (session.accessToken && command.entities.eventTitle) {
+          try {
+            const calendar = new CalendarService(session.accessToken, session.refreshToken)
+
+            // Parse date and time
+            const eventDate = command.entities.eventDate || new Date().toISOString()
+            const eventTime = command.entities.eventTime || '09:00'
+            const duration = parseInt(command.entities.eventDuration || '60')
+
+            const startTime = new Date(`${eventDate.split('T')[0]}T${eventTime}`)
+            const endTime = new Date(startTime.getTime() + duration * 60000)
+
+            const event = await calendar.createEvent({
+              id: '',
+              title: command.entities.eventTitle,
+              description: '',
+              location: command.entities.eventLocation || '',
+              startTime,
+              endTime,
+              isAllDay: false,
+              attendees: (command.entities.eventAttendees || []).map(email => ({ email })),
+              status: 'confirmed',
+              visibility: 'default'
+            })
+
+            result = {
+              success: true,
+              event,
+              message: `Calendar event "${command.entities.eventTitle}" created for ${startTime.toLocaleString()}`
+            }
+          } catch (error) {
+            result = {
+              success: false,
+              message: 'Failed to create calendar event'
+            }
+          }
+        } else {
+          result = {
+            success: false,
+            message: 'Please connect your Google Calendar first'
+          }
+        }
+        break
+
+      case 'query_calendar':
+        if (session.accessToken) {
+          try {
+            const calendar = new CalendarService(session.accessToken, session.refreshToken)
+            const timeMin = new Date()
+            const timeMax = new Date()
+            timeMax.setDate(timeMax.getDate() + 7)
+
+            const events = await calendar.getEvents('primary', timeMin, timeMax, 10)
+
+            result = {
+              success: true,
+              events,
+              message: `You have ${events.length} upcoming events`
+            }
+          } catch (error) {
+            result = {
+              success: false,
+              message: 'Failed to fetch calendar events'
+            }
+          }
+        } else {
+          result = {
+            success: false,
+            message: 'Please connect your Google Calendar first'
+          }
+        }
+        break
+
+      case 'send_email':
+        if (session.accessToken && command.entities.emailRecipient && command.entities.emailBody) {
+          try {
+            const gmail = new GmailService(session.accessToken, session.refreshToken)
+            const subject = command.entities.emailSubject || 'Message from Personal Assistant'
+
+            const sent = await gmail.sendEmail(
+              command.entities.emailRecipient,
+              subject,
+              command.entities.emailBody
+            )
+
+            result = {
+              success: sent,
+              message: sent ? `Email sent to ${command.entities.emailRecipient}` : 'Failed to send email'
+            }
+          } catch (error) {
+            result = {
+              success: false,
+              message: 'Failed to send email'
+            }
+          }
+        } else {
+          result = {
+            success: false,
+            message: 'Please connect your Gmail account first'
+          }
+        }
+        break
+
+      case 'read_emails':
+      case 'query_inbox':
+        if (session.accessToken) {
+          try {
+            const gmail = new GmailService(session.accessToken, session.refreshToken)
+            const count = command.entities.emailCount || 5
+            const messages = await gmail.getMessages(count, 'UNREAD')
+
+            result = {
+              success: true,
+              emails: messages,
+              message: `You have ${messages.length} unread emails`
+            }
+          } catch (error) {
+            result = {
+              success: false,
+              message: 'Failed to fetch emails'
+            }
+          }
+        } else {
+          result = {
+            success: false,
+            message: 'Please connect your Gmail account first'
           }
         }
         break

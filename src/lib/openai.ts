@@ -12,7 +12,7 @@ const openai = new OpenAI({
 })
 
 export interface VoiceCommand {
-  intent: 'create_task' | 'create_habit' | 'set_reminder' | 'query_status' | 'unknown'
+  intent: 'create_task' | 'create_habit' | 'set_reminder' | 'query_status' | 'create_event' | 'query_calendar' | 'send_email' | 'read_emails' | 'query_inbox' | 'unknown'
   entities: {
     taskTitle?: string
     habitName?: string
@@ -20,6 +20,18 @@ export interface VoiceCommand {
     dueDate?: string
     frequency?: 'daily' | 'weekly' | 'monthly'
     query?: string
+    // Calendar entities
+    eventTitle?: string
+    eventDate?: string
+    eventTime?: string
+    eventDuration?: string
+    eventLocation?: string
+    eventAttendees?: string[]
+    // Email entities
+    emailRecipient?: string
+    emailSubject?: string
+    emailBody?: string
+    emailCount?: number
   }
   confidence: number
   originalText: string
@@ -45,28 +57,51 @@ export async function processVoiceCommand(transcript: string): Promise<VoiceComm
       messages: [
         {
           role: 'system',
-          content: `You are a voice command processor for a personal productivity assistant.
+          content: `You are a voice command processor for a personal productivity assistant with Gmail and Calendar integration.
 Extract the intent and entities from user voice commands.
+
+Supported intents:
+- create_task: Create a todo task
+- create_habit: Track a new habit
+- set_reminder: Set a reminder
+- create_event: Create calendar event/appointment
+- query_calendar: Ask about calendar/schedule
+- send_email: Send an email
+- read_emails: Read/check emails
+- query_inbox: Ask about inbox
+- query_status: General status query
+- unknown: Cannot understand
 
 Respond ONLY with valid JSON in this exact format:
 {
-  "intent": "create_task|create_habit|set_reminder|query_status|unknown",
+  "intent": "create_task|create_habit|set_reminder|create_event|query_calendar|send_email|read_emails|query_inbox|query_status|unknown",
   "entities": {
-    "taskTitle": "string (for create_task)",
-    "habitName": "string (for create_habit)",
-    "priority": "low|medium|high (optional)",
-    "dueDate": "ISO date string (optional)",
-    "frequency": "daily|weekly|monthly (for create_habit, optional)",
-    "query": "string (for query_status)"
+    "taskTitle": "string",
+    "habitName": "string",
+    "priority": "low|medium|high",
+    "dueDate": "ISO date string",
+    "frequency": "daily|weekly|monthly",
+    "query": "string",
+    "eventTitle": "string",
+    "eventDate": "ISO date string",
+    "eventTime": "HH:MM format",
+    "eventDuration": "number of minutes",
+    "eventLocation": "string",
+    "eventAttendees": ["email1", "email2"],
+    "emailRecipient": "email address",
+    "emailSubject": "string",
+    "emailBody": "string",
+    "emailCount": number
   },
   "confidence": 0.0-1.0
 }
 
 Examples:
-- "Add task: buy groceries" → {"intent":"create_task","entities":{"taskTitle":"buy groceries"},"confidence":0.95}
-- "Create a habit to exercise daily" → {"intent":"create_habit","entities":{"habitName":"exercise","frequency":"daily"},"confidence":0.9}
-- "What's on my todo list?" → {"intent":"query_status","entities":{"query":"todo list"},"confidence":0.85}
-- "Remind me to call mom tomorrow" → {"intent":"set_reminder","entities":{"taskTitle":"call mom","dueDate":"tomorrow"},"confidence":0.9}`
+- "Schedule dentist appointment tomorrow at 2pm" → {"intent":"create_event","entities":{"eventTitle":"dentist appointment","eventDate":"tomorrow","eventTime":"14:00"},"confidence":0.95}
+- "What's on my calendar today?" → {"intent":"query_calendar","entities":{"query":"today"},"confidence":0.9}
+- "Send email to john@example.com saying meeting confirmed" → {"intent":"send_email","entities":{"emailRecipient":"john@example.com","emailBody":"meeting confirmed"},"confidence":0.9}
+- "Read my unread emails" → {"intent":"read_emails","entities":{"emailCount":10},"confidence":0.85}
+- "Add task: buy groceries" → {"intent":"create_task","entities":{"taskTitle":"buy groceries"},"confidence":0.95}`
         },
         {
           role: 'user',
