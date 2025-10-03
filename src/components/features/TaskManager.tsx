@@ -162,10 +162,16 @@ export function TaskManager({ className }: TaskManagerProps) {
             placeholder="Add a new task..."
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addTask()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addTask()
+              }
+            }}
             className="flex-1"
+            data-testid="task-input"
           />
-          <Button onClick={addTask} size="icon">
+          <Button onClick={addTask} size="icon" data-testid="task-add-button">
             <Plus className="h-4 w-4" />
           </Button>
         </div>

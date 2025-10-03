@@ -177,10 +177,16 @@ export function HabitTracker({ className }: HabitTrackerProps) {
             placeholder="Add a new habit..."
             value={newHabitName}
             onChange={(e) => setNewHabitName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addHabit()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addHabit()
+              }
+            }}
             className="flex-1"
+            data-testid="habit-input"
           />
-          <Button onClick={addHabit} size="icon">
+          <Button onClick={addHabit} size="icon" data-testid="habit-add-button">
             <Plus className="h-4 w-4" />
           </Button>
         </div>

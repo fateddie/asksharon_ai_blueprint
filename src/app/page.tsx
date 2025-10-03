@@ -20,12 +20,12 @@ export default function HomePage() {
   const [loadingData, setLoadingData] = useState(false)
   const greeting = getGreeting()
 
-  // Temporarily disabled dashboard fetching to fix white screen issues
-  // useEffect(() => {
-  //   if (hasGoogleAccess && user) {
-  //     fetchDashboardData()
-  //   }
-  // }, [hasGoogleAccess, user])
+  // Fetch dashboard data when user has Google access
+  useEffect(() => {
+    if (hasGoogleAccess && user) {
+      fetchDashboardData()
+    }
+  }, [hasGoogleAccess, user])
 
   const fetchDashboardData = async () => {
     setLoadingData(true)
@@ -215,8 +215,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Today's Summary - Temporarily disabled to prevent flashing */}
-        {false && hasGoogleAccess && (
+        {/* Today's Summary */}
+        {hasGoogleAccess && (
           <section className="mt-8">
             <div className="bg-accent/50 rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">Today's Summary</h2>
@@ -262,8 +262,8 @@ export default function HomePage() {
         )}
 
 
-        {/* Today's Focus Section - Temporarily disabled to prevent flashing */}
-        {false && hasGoogleAccess && dashboardData && (
+        {/* Today's Focus Section */}
+        {hasGoogleAccess && dashboardData && (
           <section className="mt-12 bg-primary/5 rounded-lg p-6">
             <h2 className="text-2xl font-semibold mb-6">Today's Focus</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
