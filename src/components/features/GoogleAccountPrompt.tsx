@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useGoogleAuth } from '@/hooks/useGoogleAuth'
+import { signIn, useSession } from 'next-auth/react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,13 +18,13 @@ export default function GoogleAccountPrompt({
   showFeatures = true,
   compact = false
 }: GoogleAccountPromptProps) {
-  const { isAuthenticated, connect, isLoading } = useGoogleAuth()
+  const { data: session } = useSession()
   const [isConnecting, setIsConnecting] = useState(false)
 
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
-      connect()
+      await signIn('google', { callbackUrl: '/?connected=true' })
       onConnect?.()
     } catch (error) {
       console.error('Error connecting Google account:', error)
@@ -32,8 +32,9 @@ export default function GoogleAccountPrompt({
     }
   }
 
-  if (isAuthenticated) {
-    return null // Don't show if Google is connected
+  // Don't show if user has NextAuth session with Google access
+  if (session?.accessToken) {
+    return null
   }
 
   if (compact) {
