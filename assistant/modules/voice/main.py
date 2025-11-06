@@ -34,6 +34,26 @@ def parse_intent(user_input: str) -> Dict[str, Any]:
     """
     input_lower = user_input.lower()
 
+    # Behavior tracking - Set goal
+    if any(word in input_lower for word in ["set goal", "new goal", "goal:", "target"]):
+        return {"action": "set_goal", "content": user_input}
+
+    # Behavior tracking - Log session
+    if any(word in input_lower for word in ["did gym", "did guitar", "completed", "finished session"]):
+        return {"action": "log_session", "content": user_input}
+
+    # Behavior tracking - Show goals
+    if any(word in input_lower for word in ["my goals", "show goals", "list goals", "goal progress"]):
+        return {"action": "show_goals"}
+
+    # Behavior tracking - Weekly review
+    if any(word in input_lower for word in ["weekly review", "week review", "how am i doing", "my progress"]):
+        return {"action": "weekly_review"}
+
+    # Behavior tracking - Adherence
+    if any(word in input_lower for word in ["adherence", "how close", "on track"]):
+        return {"action": "adherence"}
+
     # Add memory
     if any(word in input_lower for word in ["remember", "save", "note", "remind me"]):
         return {"action": "add_memory", "content": user_input}
@@ -101,6 +121,118 @@ def call_backend(intent: Dict[str, Any]) -> Dict[str, Any]:
             data = response.json()
             return {"success": True, "message": f"📧 {data.get('summary', 'No summary available')}"}
 
+        elif action == "set_goal":
+            # Simple goal parsing: "set goal gym 4 times per week"
+            content = intent["content"].lower()
+            # Extract goal name and target
+            goal_name = "new goal"
+            target = 4  # default
+
+            if "gym" in content:
+                goal_name = "gym"
+            elif "guitar" in content:
+                goal_name = "guitar practice"
+            elif "reading" in content:
+                goal_name = "reading"
+            elif "meditation" in content:
+                goal_name = "meditation"
+
+            # Extract number
+            import re
+            numbers = re.findall(r'\d+', content)
+            if numbers:
+                target = int(numbers[0])
+
+            response = requests.post(
+                f"{BACKEND_URL}/behaviour/goals",
+                json={"name": goal_name, "target_per_week": target},
+                timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+            return {"success": True, "message": data["message"]}
+
+        elif action == "log_session":
+            # Parse which goal: "did gym" or "completed guitar"
+            content = intent["content"].lower()
+            goal_name = None
+
+            if "gym" in content:
+                goal_name = "gym"
+            elif "guitar" in content:
+                goal_name = "guitar practice"
+            elif "reading" in content:
+                goal_name = "reading"
+            elif "meditation" in content:
+                goal_name = "meditation"
+
+            if not goal_name:
+                return {"success": False, "message": "❌ Couldn't identify which goal. Try: 'did gym' or 'completed guitar'"}
+
+            response = requests.post(
+                f"{BACKEND_URL}/behaviour/session",
+                json={"goal_name": goal_name, "completed": True},
+                timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+            return {"success": True, "message": data["message"]}
+
+        elif action == "show_goals":
+            response = requests.get(f"{BACKEND_URL}/behaviour/goals", timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            goals = data.get("goals", [])
+
+            if not goals:
+                return {"success": True, "message": "No goals set yet. Try: 'set goal gym 4 times per week'"}
+
+            message = "🎯 Your Goals:\n\n"
+            for goal in goals:
+                message += f"• {goal['name']}: {goal['completed']}/{goal['target_per_week']} completed this week\n"
+            return {"success": True, "message": message}
+
+        elif action == "adherence":
+            response = requests.get(f"{BACKEND_URL}/behaviour/adherence", timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            adherence = data.get("adherence", [])
+
+            if not adherence:
+                return {"success": True, "message": "No goals tracked yet."}
+
+            message = f"📊 Adherence Report (Week of {data['week_of']}):\n\n"
+            for item in adherence:
+                message += f"• {item['goal']}: {item['adherence_pct']}% ({item['completed']}/{item['target']}) {item['status']}\n"
+                if item['remaining'] > 0:
+                    message += f"  → {item['remaining']} sessions remaining\n"
+            return {"success": True, "message": message}
+
+        elif action == "weekly_review":
+            response = requests.get(f"{BACKEND_URL}/behaviour/weekly-review", timeout=5)
+            response.raise_for_status()
+            data = response.json()
+
+            summary = data.get("summary", {})
+            goals_detail = data.get("goals_detail", [])
+            hypotheses = data.get("hypotheses", [])
+
+            message = f"📈 Weekly Review (Week of {data['week_of']}):\n\n"
+            message += f"**Summary:**\n"
+            message += f"• Total goals: {summary['total_goals']}\n"
+            message += f"• On track: {summary['goals_on_track']} ✅\n"
+            message += f"• Behind: {summary['goals_behind']} ⚠️\n\n"
+
+            message += "**Goal Details:**\n"
+            for goal in goals_detail:
+                message += f"• {goal['goal']}: {goal['adherence_pct']}% {goal['status']}\n"
+
+            message += "\n**Insights:**\n"
+            for i, hypothesis in enumerate(hypotheses, 1):
+                message += f"{i}. {hypothesis}\n"
+
+            return {"success": True, "message": message}
+
         else:
             return {"success": False, "message": f"Unknown action: {action}"}
 
@@ -137,19 +269,22 @@ def streamlit_chat():
         st.header("💡 How to Use")
         st.markdown(
             """
-        **Add Memory:**
+        **🎯 Behavior Tracking (NEW!):**
+        - "Set goal gym 4 times per week"
+        - "My goals" / "Show goals"
+        - "Did gym" / "Completed guitar"
+        - "How am I doing?" / "Weekly review"
+        - "Show adherence" / "On track?"
+
+        **💭 Add Memory:**
         - "Remember to buy coffee"
         - "Note: Meeting at 3pm"
 
-        **Add Task:**
+        **✅ Manage Tasks:**
         - "Task: Finish report"
-        - "Need to call John"
-
-        **List Tasks:**
         - "Show my tasks"
-        - "What tasks do I have?"
 
-        **Check Email:**
+        **📧 Check Email:**
         - "Check my email"
         - "Email summary"
 
@@ -171,10 +306,16 @@ def streamlit_chat():
             (
                 "Sharon",
                 "👋 Hi! I'm Sharon, your personal assistant. I can help you with:\n\n"
-                "• Saving memories\n"
-                "• Managing tasks\n"
-                "• Checking emails\n"
-                "• And more!\n\n"
+                "🎯 **Behavior Tracking** (NEW!)\n"
+                "  • Set goals and track progress\n"
+                "  • Log completed sessions\n"
+                "  • Get weekly insights\n\n"
+                "💭 **Memory & Tasks**\n"
+                "  • Save important notes\n"
+                "  • Manage your to-dos\n\n"
+                "📧 **Email Summaries**\n"
+                "  • Check your inbox\n\n"
+                "Try: 'Set goal gym 4 times per week' or 'My goals'\n\n"
                 "What would you like to do?",
             )
         )
