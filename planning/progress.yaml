@@ -2,9 +2,10 @@ phase_1_mvp:
   status: completed
   completed_date: 2025-11-06
 phase_2_behaviour:
-  status: active
+  status: completed
+  completed_date: 2025-11-06
 phase_3_planner:
-  status: locked
+  status: active
 phase_4_fitness:
   status: locked
 phase_5_expansion:
