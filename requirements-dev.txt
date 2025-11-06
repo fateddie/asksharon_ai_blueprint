@@ -1,0 +1,45 @@
+# ==============================================
+# Development Dependencies
+# ==============================================
+# Install with: pip install -r requirements-dev.txt
+#
+# Or install both production and dev:
+# pip install -r requirements.txt -r requirements-dev.txt
+
+# -----------------------------------------------------
+# Code Formatting & Linting
+# -----------------------------------------------------
+black>=24.0.0          # Opinionated code formatter
+ruff>=0.3.0            # Fast Python linter & formatter
+
+# -----------------------------------------------------
+# Testing
+# -----------------------------------------------------
+pytest>=8.0.0          # Testing framework
+pytest-cov>=4.1.0      # Coverage reporting
+pytest-asyncio>=0.23.0 # Async test support
+pytest-mock>=3.12.0    # Mocking utilities
+
+# -----------------------------------------------------
+# Git Hooks (Optional)
+# -----------------------------------------------------
+pre-commit>=3.6.0      # Git pre-commit hooks framework
+
+# -----------------------------------------------------
+# Type Checking (Optional)
+# -----------------------------------------------------
+# mypy>=1.8.0          # Static type checker
+# types-PyYAML         # Type stubs for PyYAML
+# types-requests       # Type stubs for requests
+
+# -----------------------------------------------------
+# Development Tools
+# -----------------------------------------------------
+ipython>=8.20.0        # Enhanced Python shell
+ipdb>=0.13.13          # IPython debugger
+
+# -----------------------------------------------------
+# Documentation (Optional)
+# -----------------------------------------------------
+# mkdocs>=1.5.3          # Documentation site generator
+# mkdocs-material>=9.5.0 # Material theme for MkDocs

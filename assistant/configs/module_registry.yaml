@@ -1,0 +1,16 @@
+modules:
+  - name: voice
+    enabled: true
+    description: "Streamlit chat UI (voice-ready)"
+  - name: memory
+    enabled: true
+    description: "SQLite + FAISS conversation memory"
+  - name: email
+    enabled: true
+    description: "Email summarisation (stub in P1)"
+  - name: planner
+    enabled: true
+    description: "Task scoring and daily priorities"
+  - name: behavioural_intelligence
+    enabled: true
+    description: "Adaptive prompts and habit scaffolding"

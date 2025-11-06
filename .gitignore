@@ -1,13 +1,46 @@
+# Universal .gitignore Template
+# =============================
+# Security: Prevent credential leaks
+# Performance: Exclude large files and caches
+# Consistency: Ignore environment-specific files
+
+# ==============================================
+# SECURITY - NEVER COMMIT THESE
+# ==============================================
+# Environment variables (CRITICAL!)
+.env
+.env.local
+.env.*.local
+config/.env
+config/.env.local
+
+# API keys and secrets
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+secrets.yaml
+api_keys.json
+
+# ==============================================
 # Python
+# ==============================================
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.pyenv/
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Distribution / packaging
 .Python
-env/
-venv/
-.venv/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -24,38 +57,107 @@ wheels/
 .installed.cfg
 *.egg
 
-# Environment
-.env
-.env.local
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.pytest_cache/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-assistant/data/memory.db
+# ==============================================
+# JavaScript / Node.js
+# ==============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/cache
+.yarn/install-state.gz
 
-# IDE
+# ==============================================
+# IDEs and Editors
+# ==============================================
+# VS Code
 .vscode/
+*.code-workspace
+
+# PyCharm
 .idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
 *~
+
+# ==============================================
+# Operating Systems
+# ==============================================
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
+# Windows
+Thumbs.db
+Desktop.ini
 
-# Logs
-*.log
+# Linux
+.directory
+
+# ==============================================
+# Logs and Databases
+# ==============================================
 logs/
+*.log
+*.sqlite
+*.db
+*.sql
 
-# FAISS
-*.index
-
-# Temporary
+# ==============================================
+# Temporary Files
+# ==============================================
+tmp/
+temp/
 *.tmp
-*.temp
-.cache/
+*.bak
+*.backup
+
+# ==============================================
+# Project-Specific (Customize as needed)
+# ==============================================
+# Migration backups
+.migration-backup-*/
+
+# Data files (if large or sensitive)
+data/cache/
+data/raw/
+data/processed/
+
+# Output files
+outputs/
+results/
+
+# Model files (if large)
+models/*.pt
+models/*.h5
+*.ckpt
+
+# ==============================================
+# CI/CD
+# ==============================================
+.github/workflows/*.local
+
+# ==============================================
+# Documentation Build Output
+# ==============================================
+docs/_build/
+site/

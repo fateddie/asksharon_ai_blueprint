@@ -1,0 +1,10 @@
+phase_1_mvp:
+  status: not_started
+phase_2_behaviour:
+  status: locked
+phase_3_planner:
+  status: locked
+phase_4_fitness:
+  status: locked
+phase_5_expansion:
+  status: locked

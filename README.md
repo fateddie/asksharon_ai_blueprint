@@ -3,7 +3,20 @@
 **Internal package name:** `asksharon_ai_blueprint`
 **Public brand:** AskSharon.ai
 
+> 🎯 **Current Status:** Phase 1 MVP (95% complete) | 46 files created | 26 automated tests | Full documentation
+
 AskSharon.ai is a modular, voice-enabled personal assistant designed for **phase-gated**, **plug-in style** development. It manages email, tasks, routines, and behaviour — with persistent memory and a behavioural-psychology layer (adaptive goal reinforcement, conversational data elicitation, weekly reviews).
+
+## 🚀 What's Working Right Now
+
+✅ **Backend API** (Port 8000) - 5 modules, 5 endpoints, event bus
+✅ **Frontend UI** (Port 8501) - Chat interface with Streamlit
+✅ **Database** - SQLite + FAISS for semantic search
+✅ **Testing** - 26 automated tests with visual regression
+✅ **Automation** - One-command setup, start, test, stop
+✅ **Documentation** - Comprehensive guides and tutorials
+
+**🎓 New to the project? Start with [TUTORIAL.md](TUTORIAL.md) for a complete walkthrough!**
 
 ## 🎯 Core Characteristics
 
@@ -42,17 +55,27 @@ asksharon_ai_blueprint/
 # 1. Clone & setup
 git clone https://github.com/fateddie/asksharon_ai_blueprint.git
 cd asksharon_ai_blueprint
-chmod +x scripts/setup.sh
 ./scripts/setup.sh
 
-# 2. Configure environment
-cp assistant/configs/.env.example .env
-# Edit .env with your API keys
+# 2. Configure environment (optional for Phase 1)
+nano .env  # Edit with your API keys if needed
 
-# 3. Run
-uvicorn assistant.core.orchestrator:app --reload
-streamlit run assistant/modules/voice/main.py
+# 3. Start all services (one command!)
+./scripts/start.sh
+
+# 4. Check status anytime
+./scripts/status.sh
+
+# 5. Stop when done
+./scripts/stop.sh
 ```
+
+**Access Points:**
+- 🌐 Backend API: http://localhost:8000
+- 📚 API Docs: http://localhost:8000/docs
+- 💬 Chat UI: http://localhost:8501
+
+**See [scripts/README.md](scripts/README.md) for all available scripts.**
 
 ## 📋 Phase-Gated Workflow
 
@@ -75,14 +98,31 @@ def register(app, publish, subscribe):
 
 ## 📚 Documentation
 
+### 🎓 Getting Started
+- **[TUTORIAL.md](TUTORIAL.md)** - Complete guide to what we've built (START HERE!)
+- **[DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md)** - Quick setup guide
+- **[PROGRESS.md](PROGRESS.md)** - Current status & achievements
+- **[ROADMAP.md](ROADMAP.md)** - Future development plans
+
+### 🏗️ Architecture & Design
+- `docs/system_design_blueprint.md` - Complete technical architecture (450+ lines)
+- `docs/IMPLEMENTATION_CONTROL_PLAN.md` - Implementation strategy
+- `docs/architecture.puml` - PlantUML diagrams
+
+### 🔧 Development Guidelines
 - `.cursorrules` - 26 development rules (Python edition)
 - `CLAUDE.md` - AI assistant context
 - `principles.md` - Development philosophy
+- `docs/DECISIONS.md` - Technical decision log
+
+### 📖 Standards & Patterns
 - `docs/RULES_DATABASE_PYTHON.md` - Comprehensive patterns
 - `docs/AUTOMATION_STANDARDS.md` - Automation guidelines
 - `docs/ERROR_HANDLING_GUIDE.md` - Error management
 - `docs/NOTIFICATION_SYSTEM.md` - Notification patterns
-- `docs/DECISIONS.md` - Technical decision log
+
+### 🧪 Testing & Scripts
+- **[scripts/README.md](scripts/README.md)** - All scripts explained
 
 ## 🔧 Tech Stack
 

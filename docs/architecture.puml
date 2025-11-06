@@ -1,0 +1,66 @@
+@startuml AskSharonAI_Architecture
+title AskSharon.ai System Architecture
+skinparam backgroundColor #1E1E1E
+skinparam node {
+  BackgroundColor #2D2D2D
+  FontColor white
+  BorderColor #AAAAAA
+}
+skinparam package {
+  BackgroundColor #2D2D2D
+  FontColor white
+  BorderColor #AAAAAA
+}
+skinparam arrowColor #AAAAAA
+
+actor User as U
+U --> "Streamlit Interface" : speaks / types
+node "Streamlit Interface" as UI {
+  [Chat + Voice I/O]
+}
+UI --> "FastAPI Orchestrator" : HTTP API
+
+package "Core (assistant/core)" {
+  [Orchestrator]
+  [Scheduler]
+  [Context Manager]
+  [Event Bus]
+}
+
+package "Modules (assistant/modules)" {
+  [Voice]
+  [Memory]
+  [Email]
+  [Planner]
+  [Behavioural Intelligence Layer (BIL)]
+}
+
+"FastAPI Orchestrator" --> [Orchestrator]
+[Orchestrator] --> [Voice]
+[Orchestrator] --> [Memory]
+[Orchestrator] --> [Email]
+[Orchestrator] --> [Planner]
+[Orchestrator] --> [Behavioural Intelligence Layer (BIL)]
+
+[Memory] --> [Context Manager]
+[Planner] --> [Context Manager]
+[Behavioural Intelligence Layer (BIL)] --> [Context Manager]
+[Scheduler] --> [Behavioural Intelligence Layer (BIL)] : timed triggers
+
+database "SQLite + FAISS" {
+  folder "Tables" {
+    [memory]
+    [tasks]
+    [emails]
+    [goals]
+    [behaviour_metrics]
+  }
+}
+
+[Context Manager] --> [memory]
+[Context Manager] --> [tasks]
+[Context Manager] --> [emails]
+[Context Manager] --> [goals]
+[Context Manager] --> [behaviour_metrics]
+
+@enduml

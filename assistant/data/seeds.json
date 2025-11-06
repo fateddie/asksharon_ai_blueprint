@@ -1,0 +1,10 @@
+{
+  "tasks": [
+    { "title": "Check emails", "urgency": 3, "importance": 4, "effort": 1 },
+    { "title": "15 min guitar practice", "urgency": 2, "importance": 5, "effort": 2 }
+  ],
+  "goals": [
+    { "name": "gym", "target_per_week": 4, "completed": 0 },
+    { "name": "guitar", "target_per_week": 4, "completed": 0 }
+  ]
+}
