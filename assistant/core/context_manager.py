@@ -20,9 +20,16 @@ def recall(query_vector, top_k=5):
     if faiss_index.ntotal == 0:
         return []
     distances, ids = faiss_index.search(np.array([query_vector]).astype("float32"), top_k)
+    # Convert numpy int64 to Python ints for SQL
+    id_list = [int(i) for i in ids[0]]
+    if not id_list:
+        return []
+    # Build SQL with proper placeholder syntax
+    placeholders = ", ".join([f":id{i}" for i in range(len(id_list))])
+    params = {f"id{i}": id_val for i, id_val in enumerate(id_list)}
     with engine.connect() as conn:
         results = conn.execute(
-            text("SELECT * FROM memory WHERE id IN :ids"), {"ids": tuple(ids[0])}
+            text(f"SELECT * FROM memory WHERE id IN ({placeholders})"), params
         )
     return results.fetchall()
 
