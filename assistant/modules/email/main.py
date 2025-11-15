@@ -593,13 +593,14 @@ def detect_events_endpoint(limit: int = 50):
 
 
 @router.get("/events")
-def get_detected_events(status: str = "pending", limit: int = 20):
+def get_detected_events(status: str = "pending", limit: int = 20, future_only: bool = True):
     """
     Get detected events from database.
 
     Query params:
         status: Filter by approval_status (pending, approved, rejected, all)
         limit: Maximum number of events to return
+        future_only: If True, only return events with date_time >= today (default: True)
 
     Returns:
         {
@@ -607,9 +608,19 @@ def get_detected_events(status: str = "pending", limit: int = 20):
             "total": int
         }
     """
-    status_filter = ""
+    filters = []
+
+    # Status filter
     if status != "all":
-        status_filter = f"WHERE approval_status = '{status}'"
+        filters.append(f"approval_status = '{status}'")
+
+    # Future events only filter
+    if future_only:
+        filters.append("date_time >= date('now')")
+
+    where_clause = ""
+    if filters:
+        where_clause = "WHERE " + " AND ".join(filters)
 
     with engine.connect() as conn:
         result = conn.execute(
@@ -617,8 +628,8 @@ def get_detected_events(status: str = "pending", limit: int = 20):
                 SELECT id, email_id, event_type, title, date_time,
                        location, url, attendees, confidence, approval_status
                 FROM detected_events
-                {status_filter}
-                ORDER BY date_time DESC
+                {where_clause}
+                ORDER BY date_time ASC
                 LIMIT :limit
             """),
             {"limit": limit}

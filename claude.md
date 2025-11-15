@@ -39,11 +39,12 @@ Modular Python assistant (FastAPI + Streamlit) with phase-gated development.
 5. Log: Errors with context
 
 ### Before Responding
-- [ ] Follows 26 Rules
+- [ ] Follows 27 Rules
 - [ ] Error handling included
 - [ ] Notifications added
 - [ ] Tests written
 - [ ] Decision logged
+- [ ] UI changes verified with Playwright
 
 ## Tech Stack
 - **Backend:** FastAPI 0.115.2 + uvicorn

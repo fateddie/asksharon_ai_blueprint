@@ -18,6 +18,32 @@ AskSharon.ai is a modular, voice-enabled personal assistant designed for **phase
 
 **🎓 New to the project? Start with [TUTORIAL.md](TUTORIAL.md) for a complete walkthrough!**
 
+## 🧠 Shared Memory & Progress Reports
+
+**NEW:** Cross-system intelligence with ManagementTeam + Progress tracking!
+
+✅ **Shared Supabase Memory** - Semantic search across business & personal context
+✅ **Progress Reports** - Track activity (yesterday, weekly, last session)
+✅ **Morning Check-In** - See active business projects + linked tasks
+✅ **Cross-System Intelligence** - Business projects → personal tasks
+
+**Quick Commands:**
+```bash
+# View yesterday's activity
+python scripts/progress_report.py yesterday
+
+# Weekly progress report
+python scripts/progress_report.py week
+
+# Activity since last login
+python scripts/progress_report.py last-session
+```
+
+**Documentation:**
+- 📖 [Progress Reports Guide](docs/PROGRESS_REPORTS.md) - Complete guide
+- 🚀 [Memory Quick Start](docs/MEMORY_QUICKSTART.md) - 10-minute setup
+- 📚 [Memory Integration](docs/MEMORY_INTEGRATION.md) - Technical details
+
 ## 🎯 Core Characteristics
 
 - ✅ **Automation** - One-command setup, automated testing, self-healing

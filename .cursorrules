@@ -41,7 +41,7 @@
 22. **Flat Structure** - assistant/modules/name/main.py
 23. **Efficient Communication** - Comprehensive messages
 
-### Rules 24-26: Automation & Notifications (NEW)
+### Rules 24-27: Automation & Notifications (NEW)
 24. **Automate Everything**
     - Setup: `./scripts/setup.sh` one-command
     - Tests: `./scripts/test_all.sh` all suites
@@ -59,6 +59,14 @@
     - Graceful degradation (AI → fallback)
     - Error queues for failed operations
     - Recovery notifications
+
+27. **Verify UI Interactions with E2E Tests**
+    - Before confirming buttons/links work, run Playwright tests
+    - Create specific tests for each interactive element
+    - Verify: Element exists → Click works → Backend called → Correct response
+    - Capture screenshots for visual verification
+    - Test must pass before claiming "feature works"
+    - Pattern: `pytest tests/test_button_clicks.py::test_<feature>_button_actually_works`
 
 ## Error Handling Pattern
 ```python
@@ -117,7 +125,7 @@ async def endpoint():
 ```
 
 ## Checklist Before Commit
-- [ ] Follows Rules 1-26
+- [ ] Follows Rules 1-27
 - [ ] pytest passes
 - [ ] black formatting applied
 - [ ] mypy type checks pass
@@ -125,3 +133,4 @@ async def endpoint():
 - [ ] Notifications added
 - [ ] Docstrings complete
 - [ ] Decision logged in DECISIONS.md
+- [ ] Playwright E2E tests pass (for UI changes)

@@ -19,6 +19,30 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy import create_engine, text
 import os
 import random
+import sys
+from pathlib import Path
+
+# Import Supabase memory for ManagementTeam project integration
+try:
+    from assistant.core.supabase_memory import (
+        _get_supabase_client,
+        get_tasks_for_project,
+        DEPENDENCIES_AVAILABLE
+    )
+    SUPABASE_AVAILABLE = DEPENDENCIES_AVAILABLE
+except ImportError:
+    SUPABASE_AVAILABLE = False
+    print("⚠️  Supabase memory not available - ManagementTeam projects won't be shown in morning check-in")
+
+# Import progress report functions for daily summaries
+try:
+    # Add scripts directory to path
+    PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+    sys.path.insert(0, str(PROJECT_ROOT))
+    from scripts.progress_report import get_managementteam_activity, get_asksharon_activity
+    PROGRESS_REPORTS_AVAILABLE = True
+except ImportError:
+    PROGRESS_REPORTS_AVAILABLE = False
 
 router = APIRouter()
 
@@ -392,10 +416,92 @@ def generate_weekly_review():
 
 
 def handle_morning_checkin(data):
-    """Morning check-in handler"""
+    """
+    Morning check-in handler
+
+    Displays:
+    - Morning greeting
+    - Active ManagementTeam projects (from shared memory)
+    - Related AskSharon tasks
+    """
     prompt = random.choice(MORNING_PROMPTS)
     print(f"\n{prompt}")
     print(f"Time: {data.get('time')}\n")
+
+    # Show ManagementTeam projects (Option 1 from user request)
+    if SUPABASE_AVAILABLE:
+        try:
+            supabase = _get_supabase_client()
+
+            # Query active business projects
+            result = supabase.table("project_decisions")\
+                .select("project_name, decision, agent_name, created_at, notes")\
+                .in_("decision", ["approved", "in_progress"])\
+                .order("created_at", desc=True)\
+                .limit(5)\
+                .execute()
+
+            if result.data and len(result.data) > 0:
+                print("📊 Active Business Projects (ManagementTeam):")
+                print("=" * 50)
+
+                for project in result.data:
+                    project_name = project['project_name']
+                    decision = project['decision']
+                    agent = project['agent_name']
+
+                    # Get task count for this project
+                    tasks = get_tasks_for_project(project_name, include_completed=False)
+                    task_count = len(tasks) if tasks else 0
+                    completed_tasks = get_tasks_for_project(project_name, include_completed=True)
+                    completed_count = len([t for t in completed_tasks if t.get('completed', False)]) if completed_tasks else 0
+
+                    # Display project with task count
+                    status_emoji = "🟢" if decision == "approved" else "🟡"
+                    print(f"\n  {status_emoji} {project_name}")
+                    print(f"     Status: {decision.upper()} (by {agent})")
+
+                    if task_count > 0:
+                        print(f"     Tasks: {completed_count} completed, {task_count} pending")
+                        print(f"     💡 View tasks: python assistant/core/supabase_memory.py project --project '{project_name}'")
+                    else:
+                        print(f"     ⚠️  No tasks created yet")
+                        print(f"     💡 Create tasks: python assistant/core/supabase_memory.py add-task --project '{project_name}'")
+
+                print("\n" + "=" * 50)
+                print(f"📈 Total: {len(result.data)} active business projects\n")
+            else:
+                print("ℹ️  No active business projects found in ManagementTeam\n")
+
+        except Exception as e:
+            print(f"⚠️  Could not load ManagementTeam projects: {e}\n")
+    else:
+        print("ℹ️  ManagementTeam integration not configured\n")
+
+    # Optional: Show yesterday's summary
+    if PROGRESS_REPORTS_AVAILABLE and os.getenv("MORNING_SHOW_YESTERDAY", "false").lower() == "true":
+        try:
+            print("\n📅 Yesterday's Activity Summary")
+            print("=" * 50)
+
+            yesterday = datetime.now() - timedelta(days=1)
+            mt_activity = get_managementteam_activity(yesterday)
+            as_activity = get_asksharon_activity(yesterday)
+
+            total_activity = mt_activity['total_projects'] + as_activity['total_created'] + as_activity['total_completed']
+
+            if total_activity > 0:
+                print(f"  Business projects: {mt_activity['total_projects']} worked on")
+                print(f"  Tasks: {as_activity['total_created']} created, {as_activity['total_completed']} completed")
+                print(f"\n  💡 Full report: python scripts/progress_report.py yesterday")
+            else:
+                print("  No activity recorded yesterday")
+
+            print("=" * 50)
+            print("")
+
+        except Exception as e:
+            print(f"⚠️  Could not load yesterday's summary: {e}\n")
 
 
 def handle_evening_reflection(data):
