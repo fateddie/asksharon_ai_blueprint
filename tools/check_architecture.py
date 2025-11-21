@@ -127,6 +127,59 @@ def group_violations(violations):
     return groups
 
 
+def warn_if_no_ui_tests(root: str = "."):
+    """
+    Optional soft check:
+    - If there appears to be Streamlit UI code,
+    - And there are no tests in tests/e2e/,
+    - Print a warning (but do NOT fail the check).
+
+    This is a gentle reminder, not an enforcement mechanism.
+    """
+    has_ui = False
+    ui_indicators = ("streamlit", "st.sidebar", "st.button", "st.write", "import streamlit")
+
+    for dirpath, _, filenames in os.walk(root):
+        # Skip venv
+        if "venv" in dirpath or ".venv" in dirpath:
+            continue
+
+        for filename in filenames:
+            if not filename.endswith(".py"):
+                continue
+
+            filepath = os.path.join(dirpath, filename)
+
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    source = f.read()
+            except (OSError, UnicodeDecodeError):
+                continue
+
+            # Crude heuristic: if file imports or uses streamlit, treat it as UI
+            if any(ind in source for ind in ui_indicators):
+                has_ui = True
+                break
+        if has_ui:
+            break
+
+    # If we have UI but no e2e tests, warn
+    e2e_dir = os.path.join(root, "tests", "e2e")
+    has_e2e_tests = False
+    if os.path.isdir(e2e_dir):
+        for fname in os.listdir(e2e_dir):
+            if fname.startswith("test_") and fname.endswith(".py"):
+                has_e2e_tests = True
+                break
+
+    if has_ui and not has_e2e_tests:
+        print(
+            "\n⚠️  Warning: Streamlit UI code detected, but no tests found in tests/e2e/.\n"
+            "    For new or changed UI features, you are expected to add Playwright E2E tests.\n"
+            "    See docs/UI_TESTING_STANDARDS.md for details.\n"
+        )
+
+
 if __name__ == "__main__":
     print("🔍 Scanning codebase for architecture violations...\n")
 
@@ -150,6 +203,9 @@ if __name__ == "__main__":
         print("   See docs/FUTURE_REFACTOR.md for migration plan.\n")
 
         sys.exit(1)
+
+    # Soft UI test reminder (does not change exit code)
+    warn_if_no_ui_tests(".")
 
     print("✅ No architecture violations detected.")
     print("   All code follows the layered architecture rules.\n")

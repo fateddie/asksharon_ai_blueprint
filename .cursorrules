@@ -13,6 +13,25 @@
 3. Run `python tools/check_architecture.py` before claiming complete
 4. Verify code passes: pytest, black, mypy
 
+## UI Testing Rules (Streamlit, MANDATORY for New Features)
+**When adding or changing Streamlit UI features (new button, form, page, or behavior):**
+1. **MUST create** Playwright E2E test in `tests/e2e/test_<feature>_ui.py`
+2. **Test must verify:**
+   - Element exists and is visible
+   - Interaction works (click, fill, submit)
+   - Correct result appears in UI
+   - No error state (unless expected)
+3. **MUST execute test** and show passing output:
+   - Run: `pytest tests/e2e/test_<feature>_ui.py -v`
+   - Show test code + passing results
+4. **Forbidden:**
+   - ❌ Claiming "UI works" without passing E2E test
+   - ❌ Writing test but not running it
+   - ❌ Trivial tests (goto-only, no assertions)
+5. **Config location:** `tests/e2e/conftest.py` (use existing, don't create duplicate)
+6. **Strictness:** MEDIUM - Test required, human judges adequacy
+7. **See:** `docs/UI_TESTING_STANDARDS.md` for full guide
+
 ## The 26 Fundamental Rules
 
 ### Rules 1-3: Module Architecture
