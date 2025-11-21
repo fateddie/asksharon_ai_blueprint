@@ -62,6 +62,19 @@ class Goal(BaseModel):
     description: Optional[str] = None
 
 
+class GoalWithCalendar(BaseModel):
+    """Goal with optional calendar integration"""
+    name: str
+    target_per_week: int
+    description: Optional[str] = None
+    # Calendar fields (all optional)
+    recurring_days: Optional[str] = None
+    session_time_start: Optional[str] = None
+    session_time_end: Optional[str] = None
+    weeks_ahead: Optional[int] = 4
+    timezone: Optional[str] = None
+
+
 class SessionLog(BaseModel):
     goal_name: str
     completed: bool
@@ -137,6 +150,88 @@ def create_goal(goal: Goal):
         "status": "created",
         "goal_id": goal_id,
         "message": f"✅ Goal '{goal.name}' created - targeting {goal.target_per_week}x/week",
+    }
+
+
+@router.post("/goals/with-calendar")
+def create_goal_with_calendar(goal: GoalWithCalendar):
+    """
+    Create a new goal with optional calendar integration.
+
+    If calendar fields are provided (recurring_days, session_time_start, session_time_end),
+    creates calendar config in goal_calendar_config table.
+
+    Returns goal_id and calendar_config if calendar was configured.
+    """
+    from assistant.modules.calendar.helpers import validate_calendar_config
+
+    # Create the goal first
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                """
+            INSERT INTO goals (name, target_per_week, last_update)
+            VALUES (:name, :target, :now)
+        """
+            ),
+            {"name": goal.name, "target": goal.target_per_week, "now": datetime.now()},
+        )
+        goal_id = result.lastrowid
+
+        # If calendar fields provided, validate and save config
+        calendar_config = None
+        if goal.recurring_days and goal.session_time_start and goal.session_time_end:
+            # Validate calendar configuration
+            validation = validate_calendar_config(
+                goal.recurring_days,
+                goal.session_time_start,
+                goal.session_time_end
+            )
+
+            if not validation.get("valid"):
+                # Rollback goal creation
+                conn.rollback()
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid calendar configuration: {validation.get('error')}"
+                )
+
+            # Save calendar config
+            conn.execute(
+                text(
+                    """
+                INSERT INTO goal_calendar_config
+                (goal_id, recurring_days, session_time_start, session_time_end, weeks_ahead, timezone, is_active)
+                VALUES (:goal_id, :recurring_days, :session_time_start, :session_time_end, :weeks_ahead, :timezone, 1)
+            """
+                ),
+                {
+                    "goal_id": goal_id,
+                    "recurring_days": ",".join(validation["parsed_days"]),
+                    "session_time_start": validation["formatted_start"],
+                    "session_time_end": validation["formatted_end"],
+                    "weeks_ahead": goal.weeks_ahead or 4,
+                    "timezone": goal.timezone,
+                },
+            )
+
+            calendar_config = {
+                "recurring_days": validation["parsed_days"],
+                "session_time_start": validation["formatted_start"],
+                "session_time_end": validation["formatted_end"],
+                "weeks_ahead": goal.weeks_ahead or 4,
+                "ready_for_calendar_creation": True
+            }
+
+    message = f"✅ Goal '{goal.name}' created - targeting {goal.target_per_week}x/week"
+    if calendar_config:
+        message += f" with calendar on {', '.join(calendar_config['recurring_days'])}"
+
+    return {
+        "status": "created",
+        "goal_id": goal_id,
+        "calendar_config": calendar_config,
+        "message": message,
     }
 
 

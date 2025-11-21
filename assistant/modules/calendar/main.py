@@ -464,6 +464,132 @@ def create_event(event_data: Dict):
         raise HTTPException(status_code=500, detail=f"Error creating event: {str(e)}")
 
 
+@router.post("/events/create-recurring-for-goal")
+def create_recurring_events_for_goal(goal_id: int):
+    """
+    Create recurring calendar events for a goal with calendar config.
+
+    Fetches config from goal_calendar_config table, generates dates,
+    and creates Google Calendar events for the next N weeks.
+
+    Args:
+        goal_id: ID of the goal
+
+    Returns:
+        {
+            "events_created": int,
+            "event_ids": List[str],
+            "message": str
+        }
+    """
+    from assistant.modules.calendar.helpers import generate_event_dates, parse_recurring_days
+    from datetime import date
+
+    service = get_calendar_service()
+    if not service:
+        raise HTTPException(status_code=401, detail="Not authenticated. Visit /calendar/auth")
+
+    # Get goal and calendar config
+    with engine.connect() as conn:
+        # Get goal name
+        result = conn.execute(
+            text("SELECT name FROM goals WHERE id = :goal_id"),
+            {"goal_id": goal_id}
+        )
+        goal_row = result.fetchone()
+        if not goal_row:
+            raise HTTPException(status_code=404, detail=f"Goal {goal_id} not found")
+        goal_name = goal_row[0]
+
+        # Get calendar config
+        result = conn.execute(
+            text("""
+                SELECT recurring_days, session_time_start, session_time_end, weeks_ahead, is_active
+                FROM goal_calendar_config
+                WHERE goal_id = :goal_id AND is_active = 1
+            """),
+            {"goal_id": goal_id}
+        )
+        config_row = result.fetchone()
+        if not config_row:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No active calendar config found for goal {goal_id}"
+            )
+
+        recurring_days, time_start, time_end, weeks_ahead, is_active = config_row
+
+    # Parse recurring days (stored as comma-separated)
+    days_list = recurring_days.split(",")
+
+    # Generate event dates
+    today = date.today()
+    event_dates = generate_event_dates(today, days_list, num_weeks=weeks_ahead)
+
+    if not event_dates:
+        return {
+            "events_created": 0,
+            "event_ids": [],
+            "message": "No events to create (no matching dates in time window)"
+        }
+
+    # Create calendar events
+    created_events = []
+    for event_date in event_dates:
+        try:
+            # Build start/end datetime
+            start_datetime = datetime.combine(event_date, datetime.strptime(time_start, "%H:%M").time())
+            end_datetime = datetime.combine(event_date, datetime.strptime(time_end, "%H:%M").time())
+
+            # Build event
+            event = {
+                'summary': f"{goal_name} Session",
+                'description': f"Recurring session for goal: {goal_name}",
+                'start': {
+                    'dateTime': start_datetime.isoformat(),
+                    'timeZone': 'UTC',  # TODO: Use user timezone if provided
+                },
+                'end': {
+                    'dateTime': end_datetime.isoformat(),
+                    'timeZone': 'UTC',
+                },
+                'reminders': {
+                    'useDefault': True
+                }
+            }
+
+            # Create event in Google Calendar
+            created_event = service.events().insert(calendarId='primary', body=event).execute()
+            event_id = created_event['id']
+
+            # Save to goal_calendar_events table
+            with engine.begin() as conn:
+                conn.execute(
+                    text("""
+                        INSERT INTO goal_calendar_events (goal_id, calendar_event_id, event_date)
+                        VALUES (:goal_id, :calendar_event_id, :event_date)
+                    """),
+                    {
+                        "goal_id": goal_id,
+                        "calendar_event_id": event_id,
+                        "event_date": event_date
+                    }
+                )
+
+            created_events.append(event_id)
+            print(f"✅ Created calendar event for {goal_name} on {event_date}")
+
+        except Exception as e:
+            print(f"❌ Failed to create event for {event_date}: {str(e)}")
+            # Continue creating other events
+
+    return {
+        "events_created": len(created_events),
+        "event_ids": created_events,
+        "message": f"✅ Created {len(created_events)} calendar events for '{goal_name}'"
+    }
+
+
 @router.post("/events/create-from-detected/{event_id}")
 def create_event_from_detected(event_id: int):
     """
