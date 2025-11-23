@@ -7,7 +7,7 @@ Functions for parsing and decoding email messages.
 import email
 from email.header import decode_header
 from email.message import Message
-from typing import Optional, Tuple
+from typing import Optional, Tuple, cast
 
 
 def decode_email_header(header_value: Optional[str]) -> str:
@@ -42,10 +42,12 @@ def extract_email_body(msg: Message) -> Tuple[str, str]:
                 continue
 
             try:
-                if content_type == "text/plain":
-                    body_text = part.get_payload(decode=True).decode("utf-8", errors="ignore")
-                elif content_type == "text/html":
-                    body_html = part.get_payload(decode=True).decode("utf-8", errors="ignore")
+                payload = part.get_payload(decode=True)
+                if payload and isinstance(payload, bytes):
+                    if content_type == "text/plain":
+                        body_text = payload.decode("utf-8", errors="ignore")
+                    elif content_type == "text/html":
+                        body_html = payload.decode("utf-8", errors="ignore")
             except Exception:
                 continue
     else:
@@ -53,7 +55,7 @@ def extract_email_body(msg: Message) -> Tuple[str, str]:
         content_type = msg.get_content_type()
         try:
             payload = msg.get_payload(decode=True)
-            if payload:
+            if payload and isinstance(payload, bytes):
                 decoded_payload = payload.decode("utf-8", errors="ignore")
                 if content_type == "text/plain":
                     body_text = decoded_payload

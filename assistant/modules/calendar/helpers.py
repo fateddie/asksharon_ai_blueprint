@@ -6,7 +6,7 @@ Used by calendar module to generate recurring calendar events for goals.
 """
 
 from datetime import datetime, date, timedelta
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import re
 
 
@@ -45,13 +45,23 @@ def parse_recurring_days(text: str) -> List[str]:
 
     # Day mappings (full name and abbreviations)
     day_mappings = {
-        "monday": "mon", "mon": "mon",
-        "tuesday": "tue", "tue": "tue", "tues": "tue",
-        "wednesday": "wed", "wed": "wed",
-        "thursday": "thu", "thu": "thu", "thur": "thu", "thurs": "thu",
-        "friday": "fri", "fri": "fri",
-        "saturday": "sat", "sat": "sat",
-        "sunday": "sun", "sun": "sun",
+        "monday": "mon",
+        "mon": "mon",
+        "tuesday": "tue",
+        "tue": "tue",
+        "tues": "tue",
+        "wednesday": "wed",
+        "wed": "wed",
+        "thursday": "thu",
+        "thu": "thu",
+        "thur": "thu",
+        "thurs": "thu",
+        "friday": "fri",
+        "fri": "fri",
+        "saturday": "sat",
+        "sat": "sat",
+        "sunday": "sun",
+        "sun": "sun",
     }
 
     # Extract all day mentions from text
@@ -69,9 +79,7 @@ def parse_recurring_days(text: str) -> List[str]:
 
 
 def generate_event_dates(
-    start_date: date,
-    days_of_week: List[str],
-    num_weeks: int = 4
+    start_date: date, days_of_week: List[str], num_weeks: int = 4
 ) -> List[date]:
     """
     Generate list of dates for recurring events.
@@ -96,10 +104,7 @@ def generate_event_dates(
         return []
 
     # Map day abbreviations to weekday numbers (0=Monday, 6=Sunday)
-    day_to_weekday = {
-        "mon": 0, "tue": 1, "wed": 2, "thu": 3,
-        "fri": 4, "sat": 5, "sun": 6
-    }
+    day_to_weekday = {"mon": 0, "tue": 1, "wed": 2, "thu": 3, "fri": 4, "sat": 5, "sun": 6}
 
     target_weekdays = set()
     for day in days_of_week:
@@ -145,19 +150,19 @@ def format_time_for_calendar(time_str: str) -> Optional[str]:
     time_str = time_str.strip().lower()
 
     # Support European format with dots (7.30 -> 7:30)
-    time_str = time_str.replace('.', ':')
+    time_str = time_str.replace(".", ":")
 
     # Try 24-hour format first (HH:MM)
-    if re.match(r'^\d{1,2}:\d{2}$', time_str):
+    if re.match(r"^\d{1,2}:\d{2}$", time_str):
         try:
-            parsed = datetime.strptime(time_str, '%H:%M')
-            return parsed.strftime('%H:%M')
+            parsed = datetime.strptime(time_str, "%H:%M")
+            return parsed.strftime("%H:%M")
         except ValueError:
             return None
 
     # Try 12-hour format with am/pm
     # Patterns: "7:30am", "7:30 am", "7am"
-    match = re.match(r'^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$', time_str)
+    match = re.match(r"^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$", time_str)
     if match:
         hour = int(match.group(1))
         minute = int(match.group(2)) if match.group(2) else 0
@@ -167,9 +172,9 @@ def format_time_for_calendar(time_str: str) -> Optional[str]:
             return None
 
         # Convert to 24-hour
-        if meridiem == 'pm' and hour != 12:
+        if meridiem == "pm" and hour != 12:
             hour += 12
-        elif meridiem == 'am' and hour == 12:
+        elif meridiem == "am" and hour == 12:
             hour = 0
 
         return f"{hour:02d}:{minute:02d}"
@@ -178,10 +183,8 @@ def format_time_for_calendar(time_str: str) -> Optional[str]:
 
 
 def validate_calendar_config(
-    recurring_days: str,
-    session_time_start: str,
-    session_time_end: str
-) -> Dict[str, str]:
+    recurring_days: str, session_time_start: str, session_time_end: str
+) -> Dict[str, Any]:
     """
     Validate calendar configuration before saving.
 
@@ -210,5 +213,5 @@ def validate_calendar_config(
         "valid": True,
         "parsed_days": days,
         "formatted_start": start_time,
-        "formatted_end": end_time
+        "formatted_end": end_time,
     }

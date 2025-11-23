@@ -5,7 +5,7 @@ Uses OpenAI's function calling to extract structured data from natural language.
 """
 
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from llm_config import client, is_configured, OPENAI_MODEL
 from llm_functions import SYSTEM_PROMPT, FUNCTIONS
@@ -13,14 +13,12 @@ from llm_handlers import process_function_call
 
 
 # Re-export is_configured for backward compatibility
-__all__ = ['process_with_llm', 'is_configured']
+__all__ = ["process_with_llm", "is_configured"]
 
 
 def process_with_llm(
-    message: str,
-    conversation_history: List[Dict],
-    pending_context: Optional[Dict] = None
-) -> Dict:
+    message: str, conversation_history: List[Dict], pending_context: Optional[Dict] = None
+) -> Dict[str, Any]:
     """
     Process user message using OpenAI LLM with function calling.
 
@@ -34,11 +32,11 @@ def process_with_llm(
     """
     if not is_configured():
         return {
-            'action': 'llm_not_configured',
-            'response_text': "LLM not configured. Please set OPENAI_API_KEY in .env",
-            'needs_confirmation': False,
-            'pending_data': None,
-            'view': None
+            "action": "llm_not_configured",
+            "response_text": "LLM not configured. Please set OPENAI_API_KEY in .env",
+            "needs_confirmation": False,
+            "pending_data": None,
+            "view": None,
         }
 
     # Build messages for API call
@@ -63,7 +61,7 @@ def process_with_llm(
             tools=[{"type": "function", "function": f} for f in FUNCTIONS],
             tool_choice="auto",
             temperature=0.7,
-            max_tokens=500
+            max_tokens=500,
         )
 
         assistant_message = response.choices[0].message
@@ -78,19 +76,20 @@ def process_with_llm(
 
         # No function call - just a conversational response
         return {
-            'action': 'conversation',
-            'response_text': assistant_message.content or "I'm not sure how to help with that. Try asking me to create a goal, show your schedule, or check emails.",
-            'needs_confirmation': False,
-            'pending_data': None,
-            'view': None
+            "action": "conversation",
+            "response_text": assistant_message.content
+            or "I'm not sure how to help with that. Try asking me to create a goal, show your schedule, or check emails.",
+            "needs_confirmation": False,
+            "pending_data": None,
+            "view": None,
         }
 
     except Exception as e:
         print(f"OpenAI API error: {e}")
         return {
-            'action': 'error',
-            'response_text': "Sorry, I encountered an error. Please try again.",
-            'needs_confirmation': False,
-            'pending_data': None,
-            'view': None
+            "action": "error",
+            "response_text": "Sorry, I encountered an error. Please try again.",
+            "needs_confirmation": False,
+            "pending_data": None,
+            "view": None,
         }

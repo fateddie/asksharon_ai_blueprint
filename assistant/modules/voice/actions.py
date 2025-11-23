@@ -40,34 +40,34 @@ from summary_actions import (
 def execute_pending_action(client, pending_data: dict, action_type: str) -> str:
     """Execute a confirmed action and return result message."""
     try:
-        if action_type == 'create_goal_with_sessions':
+        if action_type == "create_goal_with_sessions":
             # Get title from either format (guided flow or direct)
-            goal_title = pending_data.get('title') or pending_data.get('goal_title', 'Untitled')
+            goal_title = pending_data.get("title") or pending_data.get("goal_title", "Untitled")
             goal_title = goal_title.title()
-            category = pending_data.get('category')
-            end_date_str = pending_data.get('end_date', '6 months')
+            category = pending_data.get("category")
+            end_date_str = pending_data.get("end_date", "6 months")
 
             # Parse end date
             end_date = parse_end_date(end_date_str)
 
             # Create the goal
             goal_item = {
-                'type': 'goal',
-                'title': goal_title,
-                'date': str(date.today()),
-                'status': 'upcoming',
-                'source': 'manual',
+                "type": "goal",
+                "title": goal_title,
+                "date": str(date.today()),
+                "status": "upcoming",
+                "source": "manual",
             }
             if category:
-                goal_item['category'] = category
+                goal_item["category"] = category
 
             created_goal = client.create_item(goal_item)
-            goal_id = created_goal['id']
+            goal_id = created_goal["id"]
 
             # Generate all session dates until end_date
             sessions_created = 0
             calendar_added = 0
-            days = pending_data['days']
+            days = pending_data["days"]
 
             # Start from today and iterate through weeks until end_date
             current_date = date.today()
@@ -78,22 +78,27 @@ def execute_pending_action(client, pending_data: dict, action_type: str) -> str:
 
                     # Create session in DB
                     session_item = {
-                        'type': 'session',
-                        'title': session_title,
-                        'date': str(current_date),
-                        'start_time': pending_data['start_time'],
-                        'end_time': pending_data['end_time'],
-                        'status': 'upcoming',
-                        'source': 'manual',
-                        'goal_id': goal_id,
+                        "type": "session",
+                        "title": session_title,
+                        "date": str(current_date),
+                        "start_time": pending_data["start_time"],
+                        "end_time": pending_data["end_time"],
+                        "status": "upcoming",
+                        "source": "manual",
+                        "goal_id": goal_id,
                     }
                     if category:
-                        session_item['category'] = category
+                        session_item["category"] = category
                     client.create_item(session_item)
                     sessions_created += 1
 
                     # Add to Google Calendar
-                    if create_calendar_event(session_title, current_date, pending_data['start_time'], pending_data['end_time']):
+                    if create_calendar_event(
+                        session_title,
+                        current_date,
+                        pending_data["start_time"],
+                        pending_data["end_time"],
+                    ):
                         calendar_added += 1
 
                 current_date += timedelta(days=1)
@@ -110,20 +115,20 @@ def execute_pending_action(client, pending_data: dict, action_type: str) -> str:
 
             return result
 
-        elif action_type == 'create_goal':
-            goal_title = pending_data.get('title') or pending_data.get('goal_title', 'Untitled')
+        elif action_type == "create_goal":
+            goal_title = pending_data.get("title") or pending_data.get("goal_title", "Untitled")
             goal_title = goal_title.title()
-            category = pending_data.get('category')
+            category = pending_data.get("category")
 
             goal_item = {
-                'type': 'goal',
-                'title': goal_title,
-                'date': str(date.today()),
-                'status': 'upcoming',
-                'source': 'manual',
+                "type": "goal",
+                "title": goal_title,
+                "date": str(date.today()),
+                "status": "upcoming",
+                "source": "manual",
             }
             if category:
-                goal_item['category'] = category
+                goal_item["category"] = category
 
             client.create_item(goal_item)
             result = f"✅ Created goal **'{goal_title}'**"
@@ -131,40 +136,40 @@ def execute_pending_action(client, pending_data: dict, action_type: str) -> str:
                 result += f" ({category})"
             return result + "!"
 
-        elif action_type == 'create_task':
+        elif action_type == "create_task":
             task_item = {
-                'type': 'task',
-                'title': pending_data['task_title'].title(),
-                'date': str(date.today()),
-                'status': 'upcoming',
-                'source': 'manual',
+                "type": "task",
+                "title": pending_data["task_title"].title(),
+                "date": str(date.today()),
+                "status": "upcoming",
+                "source": "manual",
             }
             client.create_item(task_item)
             return f"✅ Created task **'{pending_data['task_title'].title()}'**!"
 
-        elif action_type == 'create_task_with_calendar':
-            task_title = pending_data['task_title'].title()
-            task_date_str = pending_data.get('date', 'today')
-            start_time = pending_data['start_time']
-            end_time = pending_data['end_time']
+        elif action_type == "create_task_with_calendar":
+            task_title = pending_data["task_title"].title()
+            task_date_str = pending_data.get("date", "today")
+            start_time = pending_data["start_time"]
+            end_time = pending_data["end_time"]
 
             # Resolve date
-            if task_date_str == 'today':
+            if task_date_str == "today":
                 task_date = date.today()
-            elif task_date_str == 'tomorrow':
+            elif task_date_str == "tomorrow":
                 task_date = date.today() + timedelta(days=1)
             else:
                 task_date = date.fromisoformat(task_date_str)
 
             # Create task in DB
             task_item = {
-                'type': 'task',
-                'title': task_title,
-                'date': str(task_date),
-                'start_time': start_time,
-                'end_time': end_time,
-                'status': 'upcoming',
-                'source': 'manual',
+                "type": "task",
+                "title": task_title,
+                "date": str(task_date),
+                "start_time": start_time,
+                "end_time": end_time,
+                "status": "upcoming",
+                "source": "manual",
             }
             client.create_item(task_item)
 
@@ -180,18 +185,22 @@ def execute_pending_action(client, pending_data: dict, action_type: str) -> str:
             return result
 
         # EMAIL ACTIONS (with confirmation)
-        elif action_type == 'archive_email':
-            return archive_email(pending_data)
+        elif action_type == "archive_email":
+            result: str = archive_email(pending_data)
+            return result
 
-        elif action_type == 'delete_email':
-            return delete_email(pending_data)
+        elif action_type == "delete_email":
+            result = delete_email(pending_data)
+            return result
 
         # CALENDAR ACTIONS (with confirmation)
-        elif action_type == 'hide_calendar_event':
-            return hide_calendar_event(pending_data)
+        elif action_type == "hide_calendar_event":
+            result = hide_calendar_event(pending_data)
+            return result
 
-        elif action_type == 'delete_calendar_event':
-            return delete_calendar_event_action(pending_data)
+        elif action_type == "delete_calendar_event":
+            result = delete_calendar_event_action(pending_data)
+            return result
 
         return "✅ Done!"
     except Exception as e:

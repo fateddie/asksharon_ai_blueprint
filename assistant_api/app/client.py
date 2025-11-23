@@ -7,8 +7,9 @@ This client is intended for use by the Streamlit UI layer.
 It communicates with the Assistant API via HTTP, maintaining
 proper layer separation.
 """
+
 import requests
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any, Union
 from datetime import date
 
 
@@ -18,11 +19,11 @@ class AssistantAPIClient:
     def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url.rstrip("/")
 
-    def health_check(self) -> Dict:
+    def health_check(self) -> Dict[str, Any]:
         """Check API health"""
         response = requests.get(f"{self.base_url}/health")
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
     # Items endpoints
     def list_items(
@@ -35,17 +36,14 @@ class AssistantAPIClient:
         date_to: Optional[date] = None,
         search: Optional[str] = None,
         limit: int = 50,
-        offset: int = 0
-    ) -> Dict:
+        offset: int = 0,
+    ) -> Dict[str, Any]:
         """
         List items with filtering
 
         Returns: {"items": [...], "total": int}
         """
-        params = {
-            "limit": limit,
-            "offset": offset
-        }
+        params: Dict[str, Any] = {"limit": limit, "offset": offset}
 
         if type:
             params["type"] = type
@@ -64,29 +62,33 @@ class AssistantAPIClient:
 
         response = requests.get(f"{self.base_url}/items", params=params)
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
-    def get_item(self, item_id: str) -> Dict:
+    def get_item(self, item_id: str) -> Dict[str, Any]:
         """Get single item by ID"""
         response = requests.get(f"{self.base_url}/items/{item_id}")
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
-    def create_item(self, item_data: Dict) -> Dict:
+    def create_item(self, item_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create new item"""
         response = requests.post(f"{self.base_url}/items", json=item_data)
         if not response.ok:
             error_detail = response.text[:200] if response.text else f"HTTP {response.status_code}"
-            raise Exception(f"{response.status_code} Server Error: {error_detail} for url: {response.url}")
-        return response.json()
+            raise Exception(
+                f"{response.status_code} Server Error: {error_detail} for url: {response.url}"
+            )
+        return response.json()  # type: ignore[no-any-return]
 
-    def update_item(self, item_id: str, updates: Dict) -> Dict:
+    def update_item(self, item_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
         """Update existing item (partial)"""
         response = requests.patch(f"{self.base_url}/items/{item_id}", json=updates)
         if not response.ok:
             error_detail = response.text[:200] if response.text else f"HTTP {response.status_code}"
-            raise Exception(f"{response.status_code} Server Error: {error_detail} for url: {response.url}")
-        return response.json()
+            raise Exception(
+                f"{response.status_code} Server Error: {error_detail} for url: {response.url}"
+            )
+        return response.json()  # type: ignore[no-any-return]
 
     def delete_item(self, item_id: str) -> None:
         """Delete item"""
@@ -94,7 +96,7 @@ class AssistantAPIClient:
         response.raise_for_status()
 
     # Stats endpoints
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> Dict[str, Any]:
         """
         Get dashboard statistics
 
@@ -106,4 +108,4 @@ class AssistantAPIClient:
         """
         response = requests.get(f"{self.base_url}/stats/summary")
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]

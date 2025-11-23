@@ -7,6 +7,7 @@ Token bucket rate limiter to stay within Gmail API quotas.
 import time
 from collections import deque
 from threading import Lock
+from typing import Deque
 
 
 class RateLimiter:
@@ -20,7 +21,7 @@ class RateLimiter:
         """
         self.max_calls = max_calls
         self.period = period
-        self.calls = deque()
+        self.calls: Deque[float] = deque()
         self.lock = Lock()
 
     def wait_if_needed(self):
