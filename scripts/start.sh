@@ -1,6 +1,6 @@
 #!/bin/bash
 # AskSharon.ai - Start All Services
-# Central startup script for backend + frontend
+# Central startup script for all 3 services
 
 set -e
 
@@ -25,17 +25,15 @@ if [ ! -d ".venv" ]; then
 fi
 
 # Check if processes are already running
-BACKEND_PID=$(lsof -ti :8000 || echo "")
+ORCHESTRATOR_PID=$(lsof -ti :8000 || echo "")
+API_PID=$(lsof -ti :8002 || echo "")
 FRONTEND_PID=$(lsof -ti :8501 || echo "")
 
-if [ -n "$BACKEND_PID" ]; then
-    echo -e "${YELLOW}⚠ Backend already running on port 8000 (PID: $BACKEND_PID)${NC}"
-    echo -e "${YELLOW}  Run: ./scripts/stop.sh to stop existing services${NC}"
-    exit 1
-fi
-
-if [ -n "$FRONTEND_PID" ]; then
-    echo -e "${YELLOW}⚠ Frontend already running on port 8501 (PID: $FRONTEND_PID)${NC}"
+if [ -n "$ORCHESTRATOR_PID" ] || [ -n "$API_PID" ] || [ -n "$FRONTEND_PID" ]; then
+    echo -e "${YELLOW}⚠ Services already running:${NC}"
+    [ -n "$ORCHESTRATOR_PID" ] && echo -e "  • Orchestrator (8000): PID $ORCHESTRATOR_PID"
+    [ -n "$API_PID" ] && echo -e "  • Assistant API (8002): PID $API_PID"
+    [ -n "$FRONTEND_PID" ] && echo -e "  • Frontend (8501): PID $FRONTEND_PID"
     echo -e "${YELLOW}  Run: ./scripts/stop.sh to stop existing services${NC}"
     exit 1
 fi
@@ -43,35 +41,62 @@ fi
 # Create logs directory
 mkdir -p logs
 
-# Activate virtual environment and start backend
-echo -e "\n${YELLOW}[1/2] Starting FastAPI backend on port 8000...${NC}"
+# Activate virtual environment
 source .venv/bin/activate
-nohup uvicorn assistant.core.orchestrator:app --host 0.0.0.0 --port 8000 > logs/backend.log 2>&1 &
-BACKEND_PID=$!
-echo $BACKEND_PID > logs/backend.pid
-echo -e "${GREEN}✓ Backend started (PID: $BACKEND_PID)${NC}"
 
-# Wait for backend to be ready
-sleep 2
-if ! lsof -ti :8000 > /dev/null; then
-    echo -e "${RED}✗ Backend failed to start. Check logs/backend.log${NC}"
+# Helper function to wait for port
+wait_for_port() {
+    local port=$1
+    local max_wait=$2
+    local waited=0
+    while [ $waited -lt $max_wait ]; do
+        if lsof -ti :$port > /dev/null 2>&1; then
+            return 0
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+    return 1
+}
+
+# Start orchestrator (port 8000)
+echo -e "\n${YELLOW}[1/3] Starting Orchestrator on port 8000...${NC}"
+nohup uvicorn assistant.core.orchestrator:app --host 0.0.0.0 --port 8000 > logs/orchestrator.log 2>&1 &
+ORCHESTRATOR_PID=$!
+echo $ORCHESTRATOR_PID > logs/orchestrator.pid
+
+if ! wait_for_port 8000 10; then
+    echo -e "${RED}✗ Orchestrator failed to start. Check logs/orchestrator.log${NC}"
     exit 1
 fi
+echo -e "${GREEN}✓ Orchestrator started (PID: $ORCHESTRATOR_PID)${NC}"
 
-# Start frontend
-echo -e "\n${YELLOW}[2/2] Starting Streamlit frontend on port 8501...${NC}"
+# Start Assistant API (port 8002)
+echo -e "\n${YELLOW}[2/3] Starting Assistant API on port 8002...${NC}"
+nohup uvicorn assistant_api.app.main:app --host 0.0.0.0 --port 8002 > logs/assistant_api.log 2>&1 &
+API_PID=$!
+echo $API_PID > logs/assistant_api.pid
+
+if ! wait_for_port 8002 10; then
+    echo -e "${RED}✗ Assistant API failed to start. Check logs/assistant_api.log${NC}"
+    kill $ORCHESTRATOR_PID 2>/dev/null || true
+    exit 1
+fi
+echo -e "${GREEN}✓ Assistant API started (PID: $API_PID)${NC}"
+
+# Start frontend (port 8501)
+echo -e "\n${YELLOW}[3/3] Starting Streamlit frontend on port 8501...${NC}"
 nohup streamlit run assistant/modules/voice/main.py --server.port 8501 --server.headless true > logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo $FRONTEND_PID > logs/frontend.pid
-echo -e "${GREEN}✓ Frontend started (PID: $FRONTEND_PID)${NC}"
 
-# Wait for frontend to be ready
-sleep 3
-if ! lsof -ti :8501 > /dev/null; then
+if ! wait_for_port 8501 15; then
     echo -e "${RED}✗ Frontend failed to start. Check logs/frontend.log${NC}"
-    kill $BACKEND_PID 2>/dev/null || true
+    kill $ORCHESTRATOR_PID 2>/dev/null || true
+    kill $API_PID 2>/dev/null || true
     exit 1
 fi
+echo -e "${GREEN}✓ Frontend started (PID: $FRONTEND_PID)${NC}"
 
 # Success summary
 echo -e "\n${GREEN}================================${NC}"
@@ -79,18 +104,21 @@ echo -e "${GREEN}✓ All services running!${NC}"
 echo -e "${GREEN}================================${NC}"
 echo ""
 echo -e "${BLUE}📡 Access Points:${NC}"
-echo -e "  • Backend API:  ${GREEN}http://localhost:8000${NC}"
-echo -e "  • API Docs:     ${GREEN}http://localhost:8000/docs${NC}"
-echo -e "  • Frontend UI:  ${GREEN}http://localhost:8501${NC}"
+echo -e "  • Orchestrator:   ${GREEN}http://localhost:8000${NC}"
+echo -e "  • Assistant API:  ${GREEN}http://localhost:8002${NC}"
+echo -e "  • API Docs:       ${GREEN}http://localhost:8002/docs${NC}"
+echo -e "  • Frontend UI:    ${GREEN}http://localhost:8501${NC}"
 echo ""
 echo -e "${BLUE}📊 Process IDs:${NC}"
-echo -e "  • Backend:  $BACKEND_PID"
-echo -e "  • Frontend: $FRONTEND_PID"
+echo -e "  • Orchestrator:   $ORCHESTRATOR_PID"
+echo -e "  • Assistant API:  $API_PID"
+echo -e "  • Frontend:       $FRONTEND_PID"
 echo ""
 echo -e "${BLUE}📝 Logs:${NC}"
-echo -e "  • Backend:  logs/backend.log"
-echo -e "  • Frontend: logs/frontend.log"
+echo -e "  • Orchestrator:   logs/orchestrator.log"
+echo -e "  • Assistant API:  logs/assistant_api.log"
+echo -e "  • Frontend:       logs/frontend.log"
 echo ""
 echo -e "${YELLOW}To stop services: ./scripts/stop.sh${NC}"
-echo -e "${YELLOW}To view logs: tail -f logs/backend.log${NC}"
+echo -e "${YELLOW}To view logs: tail -f logs/assistant_api.log${NC}"
 echo ""

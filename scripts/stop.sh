@@ -1,6 +1,6 @@
 #!/bin/bash
 # AskSharon.ai - Stop All Services
-# Cleanly shut down backend + frontend
+# Cleanly shut down all 3 services
 
 # Colors
 GREEN='\033[0;32m'
@@ -17,23 +17,34 @@ echo -e "${BLUE}================================${NC}"
 
 STOPPED=0
 
-# Stop backend (port 8000)
-BACKEND_PID=$(lsof -ti :8000 || echo "")
-if [ -n "$BACKEND_PID" ]; then
-    echo -e "\n${YELLOW}Stopping backend (PID: $BACKEND_PID)...${NC}"
-    kill $BACKEND_PID 2>/dev/null
+# Stop orchestrator (port 8000)
+ORCHESTRATOR_PID=$(lsof -ti :8000 || echo "")
+if [ -n "$ORCHESTRATOR_PID" ]; then
+    echo -e "\n${YELLOW}Stopping orchestrator (PID: $ORCHESTRATOR_PID)...${NC}"
+    kill $ORCHESTRATOR_PID 2>/dev/null
     sleep 1
-
-    # Force kill if still running
     if lsof -ti :8000 > /dev/null 2>&1; then
-        echo -e "${YELLOW}Force killing backend...${NC}"
-        kill -9 $BACKEND_PID 2>/dev/null || true
+        kill -9 $ORCHESTRATOR_PID 2>/dev/null || true
     fi
-
-    echo -e "${GREEN}✓ Backend stopped${NC}"
+    echo -e "${GREEN}✓ Orchestrator stopped${NC}"
     STOPPED=1
 else
-    echo -e "\n${YELLOW}⚠ Backend not running on port 8000${NC}"
+    echo -e "\n${YELLOW}⚠ Orchestrator not running on port 8000${NC}"
+fi
+
+# Stop Assistant API (port 8002)
+API_PID=$(lsof -ti :8002 || echo "")
+if [ -n "$API_PID" ]; then
+    echo -e "\n${YELLOW}Stopping Assistant API (PID: $API_PID)...${NC}"
+    kill $API_PID 2>/dev/null
+    sleep 1
+    if lsof -ti :8002 > /dev/null 2>&1; then
+        kill -9 $API_PID 2>/dev/null || true
+    fi
+    echo -e "${GREEN}✓ Assistant API stopped${NC}"
+    STOPPED=1
+else
+    echo -e "\n${YELLOW}⚠ Assistant API not running on port 8002${NC}"
 fi
 
 # Stop frontend (port 8501)
@@ -42,13 +53,9 @@ if [ -n "$FRONTEND_PID" ]; then
     echo -e "\n${YELLOW}Stopping frontend (PID: $FRONTEND_PID)...${NC}"
     kill $FRONTEND_PID 2>/dev/null
     sleep 1
-
-    # Force kill if still running
     if lsof -ti :8501 > /dev/null 2>&1; then
-        echo -e "${YELLOW}Force killing frontend...${NC}"
         kill -9 $FRONTEND_PID 2>/dev/null || true
     fi
-
     echo -e "${GREEN}✓ Frontend stopped${NC}"
     STOPPED=1
 else
@@ -56,7 +63,7 @@ else
 fi
 
 # Clean up PID files
-rm -f logs/backend.pid logs/frontend.pid 2>/dev/null
+rm -f logs/orchestrator.pid logs/assistant_api.pid logs/frontend.pid logs/backend.pid 2>/dev/null
 
 echo -e "\n${BLUE}================================${NC}"
 if [ $STOPPED -eq 1 ]; then
