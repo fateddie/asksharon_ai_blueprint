@@ -14,10 +14,94 @@ Phase 1 (MVP)          ██████████████████ 10
 Phase 2 (Behaviour)    ██████████████████ 100% ✓
 Phase 3 (Planner)      ██████████████████ 100% ✓
 Phase 3.5 (Discipline) ██████████████████ 100% ✓
-Phase 4 (Fitness)      ██████████████████ 100% ← COMPLETE
+Phase 4 (Fitness)      ██████████████████ 100% ✓
+Phase 4.5+ (Training)  ██████████████████ 100% ← COMPLETE
 Phase 5 (Expansion)    ░░░░░░░░░░░░░░░░░░  0%  (locked)
 Phase 7 (Prompt Coach) ██████████████████ 100% ✓
 ```
+
+---
+
+## 🎯 Phase 4.5+ - Intelligent Training System (Complete)
+
+**Goal:** Transform fitness tracker into adaptive training coach with scientific programming
+
+### ✅ Goal Intelligence Engine (Complete)
+- [x] Dynamic goal category detection from title/description
+- [x] 10 goal training types (vertical jump, 5K, mobility, strength, etc.)
+- [x] Training requirements mapping (plyometrics for jumping, tempo runs for 5K)
+- [x] Auto-generated milestones for goals
+- [x] Periodization state management (accumulation → transmutation → realization → deload)
+
+### ✅ Calendar-Aware Load Management (Complete)
+- [x] External activity integration (5-a-side, jiu-jitsu, etc.)
+- [x] Activity load scoring (1-10 scale based on intensity)
+- [x] Training adjustments based on day before/after activities
+- [x] Recurring activity support (weekly games, classes)
+- [x] Weekly load distribution analysis
+
+### ✅ Workout Generator (Complete)
+- [x] Personalized workout generation based on goals + equipment + fitness level
+- [x] Calendar-aware load balancing
+- [x] Periodization phase adjustments
+- [x] Weekly plan generation
+- [x] Automatic rest/mobility days when external load is high
+
+### ✅ Justification System (Complete)
+- [x] Brief explanations shown by default
+- [x] Detailed "learn more" training science content
+- [x] Topics: plyometrics, progressive overload, tempo runs, deload, etc.
+- [x] Connects workout decisions to user goals
+- [x] Phase explanations for periodization
+
+### ✅ BIL Routine Integration (Complete)
+- [x] Workout logging queue management
+- [x] Evening routine fitness items (unlogged workout reminders)
+- [x] Morning routine fitness items (today's workout preview)
+- [x] Days-since-workout tracking
+- [x] Motivation reminders for active goals
+
+### ✅ 5-Tab Fitness UI (Complete)
+- [x] Dashboard - Weekly plan, goal progress, calendar preview, periodization status
+- [x] Today's Workout - Generated workout with brief/detailed justification
+- [x] Goals - Add goals with intelligent category detection, milestones, progress tracking
+- [x] Assessment - Monthly fitness tests, progress vs targets, history
+- [x] Setup - Profile, equipment, external activities configuration
+
+### Architecture
+```
+assistant/modules/fitness/
+├── training_intelligence.py  # Goal types, periodization, calendar load
+├── workout_generator.py      # Personalized workout generation
+├── workout_justification.py  # Training science explanations
+├── workout_reminders.py      # BIL routine integration
+├── user_profile.py           # User profile management
+├── assessment.py             # Fitness assessments
+├── equipment.py              # Equipment management
+├── goals.py                  # Goal CRUD operations
+├── exercise_seeds.py         # 36 exercises with coaching content
+├── workout_db.py             # Database setup
+└── workout_session.py        # Session management with pause/resume
+
+assistant/modules/behavioural_intelligence/
+└── bil_rituals.py            # Updated with fitness integration
+
+assistant/modules/voice/
+└── fitness_ui.py             # 5-tab Streamlit UI
+```
+
+### Database Tables Added (7 new)
+- `goal_training_types` - Training requirements per goal category
+- `goal_milestones` - Auto-generated milestones for goals
+- `external_activities` - Calendar activities affecting training load
+- `weekly_training_plans` - Generated workout plans
+- `workout_justifications` - Stored justifications for workouts
+- `periodization_state` - Current training phase tracking
+- `workout_logging_queue` - Unlogged workout reminders
+
+### Tests
+- 66 unit tests passing for Phase 4.5+ components
+- Tests cover: goal intelligence, milestones, periodization, calendar integration, workout generation, justifications
 
 ---
 

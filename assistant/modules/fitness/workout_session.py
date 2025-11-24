@@ -503,3 +503,237 @@ def suggest_adjustment(avg_rpe: float) -> str:
         return "High intensity workout. Make sure to recover well"
     else:
         return "Very high intensity. Consider reducing volume in your next session"
+
+
+# ============================================
+# WORKOUT CONTROL: Pause, Resume, Restart
+# ============================================
+
+
+def pause_workout_session(session_id: int) -> Dict[str, Any]:
+    """
+    Pause an active workout session.
+
+    Stores the pause time to calculate total paused duration.
+
+    Args:
+        session_id: The session ID
+
+    Returns:
+        Dict with status and elapsed time info
+    """
+    now = datetime.now()
+
+    with engine.begin() as conn:
+        # Get session info
+        row = conn.execute(
+            text(
+                """
+                SELECT status, started_at, paused_at, total_paused_seconds
+                FROM workout_sessions WHERE id = :id
+            """
+            ),
+            {"id": session_id},
+        ).fetchone()
+
+        if not row:
+            return {"success": False, "error": "Session not found"}
+
+        status = row[0]
+        if status != "in_progress":
+            return {"success": False, "error": f"Cannot pause session with status: {status}"}
+
+        # Update to paused
+        conn.execute(
+            text(
+                """
+                UPDATE workout_sessions
+                SET status = 'paused', paused_at = :paused_at
+                WHERE id = :id
+            """
+            ),
+            {"id": session_id, "paused_at": now.isoformat()},
+        )
+
+    return {
+        "success": True,
+        "status": "paused",
+        "paused_at": now.isoformat(),
+    }
+
+
+def resume_workout_session(session_id: int) -> Dict[str, Any]:
+    """
+    Resume a paused workout session.
+
+    Calculates paused duration and adds to total_paused_seconds.
+
+    Args:
+        session_id: The session ID
+
+    Returns:
+        Dict with status and timing info
+    """
+    now = datetime.now()
+
+    with engine.begin() as conn:
+        # Get session info
+        row = conn.execute(
+            text(
+                """
+                SELECT status, started_at, paused_at, total_paused_seconds
+                FROM workout_sessions WHERE id = :id
+            """
+            ),
+            {"id": session_id},
+        ).fetchone()
+
+        if not row:
+            return {"success": False, "error": "Session not found"}
+
+        status = row[0]
+        paused_at = row[2]
+        total_paused = row[3] or 0
+
+        if status != "paused":
+            return {"success": False, "error": f"Cannot resume session with status: {status}"}
+
+        if paused_at:
+            paused_at_dt = datetime.fromisoformat(paused_at)
+            pause_duration = int((now - paused_at_dt).total_seconds())
+            total_paused += pause_duration
+
+        # Update to in_progress
+        conn.execute(
+            text(
+                """
+                UPDATE workout_sessions
+                SET status = 'in_progress', paused_at = NULL, total_paused_seconds = :total_paused
+                WHERE id = :id
+            """
+            ),
+            {"id": session_id, "total_paused": total_paused},
+        )
+
+    return {
+        "success": True,
+        "status": "in_progress",
+        "resumed_at": now.isoformat(),
+        "total_paused_seconds": total_paused,
+    }
+
+
+def restart_workout_session(session_id: int) -> Dict[str, Any]:
+    """
+    Restart a workout session from the beginning.
+
+    Keeps the same template but resets all timing and clears exercise logs.
+
+    Args:
+        session_id: The session ID
+
+    Returns:
+        Dict with new session info
+    """
+    now = datetime.now()
+
+    with engine.begin() as conn:
+        # Get session info
+        row = conn.execute(
+            text("SELECT template_id, status FROM workout_sessions WHERE id = :id"),
+            {"id": session_id},
+        ).fetchone()
+
+        if not row:
+            return {"success": False, "error": "Session not found"}
+
+        template_id = row[0]
+        status = row[1]
+
+        if status == "completed":
+            return {"success": False, "error": "Cannot restart completed session"}
+
+        # Delete existing exercise logs for this session
+        conn.execute(
+            text("DELETE FROM exercise_logs WHERE session_id = :id"),
+            {"id": session_id},
+        )
+
+        # Reset the session
+        conn.execute(
+            text(
+                """
+                UPDATE workout_sessions
+                SET started_at = :started, ended_at = NULL, status = 'in_progress',
+                    duration_minutes = NULL, overall_rpe = NULL, notes = NULL,
+                    paused_at = NULL, total_paused_seconds = 0
+                WHERE id = :id
+            """
+            ),
+            {"id": session_id, "started": now.isoformat()},
+        )
+
+    return {
+        "success": True,
+        "session_id": session_id,
+        "template_id": template_id,
+        "status": "in_progress",
+        "restarted_at": now.isoformat(),
+    }
+
+
+def get_session_status(session_id: int) -> Dict[str, Any]:
+    """
+    Get current status and timing info for a workout session.
+
+    Args:
+        session_id: The session ID
+
+    Returns:
+        Dict with full session status
+    """
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT ws.id, ws.template_id, wt.name, ws.started_at, ws.status,
+                       ws.paused_at, ws.total_paused_seconds, ws.ended_at, ws.duration_minutes
+                FROM workout_sessions ws
+                LEFT JOIN workout_templates wt ON ws.template_id = wt.id
+                WHERE ws.id = :id
+            """
+            ),
+            {"id": session_id},
+        ).fetchone()
+
+    if not row:
+        return {"error": "Session not found"}
+
+    started_at = datetime.fromisoformat(row[3])
+    status = row[4]
+    paused_at = row[5]
+    total_paused = row[6] or 0
+
+    # Calculate elapsed time
+    if status == "in_progress":
+        elapsed = (datetime.now() - started_at).total_seconds() - total_paused
+    elif status == "paused" and paused_at:
+        paused_at_dt = datetime.fromisoformat(paused_at)
+        elapsed = (paused_at_dt - started_at).total_seconds() - total_paused
+    else:
+        elapsed = (row[8] or 0) * 60  # duration_minutes to seconds
+
+    return {
+        "id": row[0],
+        "template_id": row[1],
+        "template_name": row[2],
+        "started_at": row[3],
+        "status": status,
+        "paused_at": paused_at,
+        "total_paused_seconds": total_paused,
+        "elapsed_seconds": int(elapsed),
+        "elapsed_minutes": round(elapsed / 60, 1),
+        "can_pause": status == "in_progress",
+        "can_resume": status == "paused",
+        "can_restart": status in ("in_progress", "paused", "cancelled"),
+    }

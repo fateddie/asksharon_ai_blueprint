@@ -44,10 +44,12 @@ mkdir -p logs
 # Activate virtual environment
 source .venv/bin/activate
 
-# Initialize database tables (Phase 3.5 discipline system)
+# Initialize database tables (Phase 3.5 discipline system + Phase 4.5+ fitness)
 echo -e "\n${YELLOW}[0/3] Initializing database tables...${NC}"
 python -c "from assistant.modules.behavioural_intelligence import bil_db_init" 2>/dev/null || true
-echo -e "${GREEN}✓ Database tables ready${NC}"
+python -c "from assistant.modules.fitness.training_intelligence import init_training_intelligence_tables" 2>/dev/null || true
+python -c "from assistant.modules.fitness.exercise_seeds import seed_exercises" 2>/dev/null || true
+echo -e "${GREEN}✓ Database tables ready (BIL + Fitness 4.5+)${NC}"
 
 # Helper function to wait for port
 wait_for_port() {

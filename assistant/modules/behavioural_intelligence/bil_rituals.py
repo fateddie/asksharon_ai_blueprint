@@ -5,10 +5,15 @@ Phase 3.5 proactive discipline rituals.
 
 Evening planning (6pm) is the primary pattern.
 Morning fallback (8am) activates if evening was skipped.
+
+Phase 4.5+ Integration:
+- Fitness workout logging reminders
+- Today's workout preview in morning
+- Goal progress updates
 """
 
 from datetime import date, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from sqlalchemy import text
 
 from .bil_config import engine
@@ -19,6 +24,17 @@ from .bil_daily_reflection import (
     get_recent_reflections,
 )
 from .bil_streaks import update_streak
+
+# Phase 4.5+ fitness integration
+try:
+    from assistant.modules.fitness.workout_reminders import (
+        get_evening_routine_fitness_items,
+        get_morning_routine_fitness_items,
+    )
+
+    FITNESS_AVAILABLE = True
+except ImportError:
+    FITNESS_AVAILABLE = False
 
 
 # Prompts for evening planning
@@ -256,3 +272,70 @@ def _get_evening_planning_streak() -> Dict[str, Any]:
         "longest": row[1],
         "last_completed": row[2],
     }
+
+
+# =============================================================================
+# PHASE 4.5+ FITNESS INTEGRATION
+# =============================================================================
+
+
+def get_fitness_items_for_evening() -> List[Dict[str, Any]]:
+    """
+    Get fitness-related items for evening routine.
+
+    Includes:
+    - Unlogged workout reminders
+    - Workout needed reminders
+    - Goal progress updates
+
+    Returns:
+        List of fitness items to display
+    """
+    if not FITNESS_AVAILABLE:
+        return []
+
+    return get_evening_routine_fitness_items()
+
+
+def get_fitness_items_for_morning() -> List[Dict[str, Any]]:
+    """
+    Get fitness-related items for morning routine.
+
+    Includes:
+    - Today's workout preview
+    - Unlogged workout reminders
+    - Goal progress
+
+    Returns:
+        List of fitness items to display
+    """
+    if not FITNESS_AVAILABLE:
+        return []
+
+    return get_morning_routine_fitness_items()
+
+
+def get_complete_evening_context() -> Dict[str, Any]:
+    """
+    Get complete context for evening routine including fitness.
+
+    Combines:
+    - Evening planning context
+    - Fitness reminders and updates
+    """
+    context = get_evening_planning_context()
+    context["fitness_items"] = get_fitness_items_for_evening()
+    return context
+
+
+def get_complete_morning_context() -> Dict[str, Any]:
+    """
+    Get complete context for morning routine including fitness.
+
+    Combines:
+    - Morning display data
+    - Fitness preview and reminders
+    """
+    context = get_morning_display_data()
+    context["fitness_items"] = get_fitness_items_for_morning()
+    return context

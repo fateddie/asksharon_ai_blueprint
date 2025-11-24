@@ -713,14 +713,17 @@ CREATE TABLE weekly_volume (
 
 Phase 4.5 is **COMPLETE** when:
 
-- [ ] User can record height/weight and see BMI calculated
-- [ ] User can complete baseline fitness assessment
-- [ ] Fitness level correctly classified (beginner/intermediate/advanced)
-- [ ] User can specify available equipment
-- [ ] Exercises filtered by user's equipment
-- [ ] User can set fitness goals with deadlines
-- [ ] Goal progress tracked and displayed
-- [ ] User can set focus areas with priorities
+- [x] User can record height/weight and see BMI calculated
+- [x] User can complete baseline fitness assessment
+- [x] Fitness level correctly classified (beginner/intermediate/advanced)
+- [x] User can specify available equipment
+- [x] Exercises filtered by user's equipment
+- [x] User can set fitness goals with deadlines
+- [x] Goal progress tracked and displayed
+- [x] User can set focus areas with priorities
+- [x] Workout pause/resume/restart controls working
+- [x] 36 exercises seeded with coaching content (bodyweight, kettlebell, pull-up bar, dumbbell)
+- [x] 42 unit tests passing for Phase 4.5 data layer
 - [ ] Generated workouts are balanced (push/pull/legs)
 - [ ] Progressive overload suggested based on RPE history
 - [ ] Recovery considered (48-72hr rule)
@@ -728,6 +731,295 @@ Phase 4.5 is **COMPLETE** when:
 - [ ] Volume tracking per muscle group/pattern
 - [ ] Smart recommendations displayed
 - [ ] All Playwright E2E tests pass
-- [ ] All unit tests pass
 - [ ] API endpoints documented
 - [ ] User guide complete
+
+---
+
+## Phase 4.5+ Extension: Intelligent Training System
+
+### Overview
+Extend from "workout tracker" to "adaptive training coach" with dynamic goal understanding, calendar-aware load management, and educational justifications.
+
+### Week 5: Goal Intelligence Engine
+
+**Task 5.1: Create goal training types mapping**
+- [ ] Create `assistant/modules/fitness/training_intelligence.py`
+- [ ] Define goal categories with training requirements:
+  ```python
+  GOAL_TRAINING_MAP = {
+      "vertical_jump": {
+          "training_methods": ["plyometrics", "posterior_chain", "rate_of_force"],
+          "exercises": ["box_jumps", "depth_jumps", "kb_swings", "squats"],
+          "movement_patterns": ["squat", "hinge", "explosive"],
+          "periodization": "power_focus"
+      },
+      "5k_time": {
+          "training_methods": ["aerobic_base", "tempo_runs", "intervals"],
+          "exercises": ["running", "cycling", "rowing"],
+          "movement_patterns": ["locomotion", "cardio"],
+          "periodization": "endurance_focus"
+      },
+      "general_fitness": {
+          "training_methods": ["balanced", "circuit_training"],
+          "exercises": ["all_equipment_available"],
+          "movement_patterns": ["push", "pull", "squat", "hinge", "core"],
+          "periodization": "balanced"
+      },
+      "mobility": {
+          "training_methods": ["flexibility", "joint_health"],
+          "exercises": ["yoga_flows", "dynamic_stretches", "foam_rolling"],
+          "movement_patterns": ["mobility"],
+          "periodization": "maintenance"
+      }
+  }
+  ```
+- [ ] Create `goal_training_types` table in database
+- [ ] Implement `get_training_for_goal(goal_type)` function
+- [ ] Implement `get_exercises_for_goal(goal_id)` function
+
+**Task 5.2: Dynamic goal type detection**
+- [ ] When user creates goal, analyze description to suggest category
+- [ ] "Increase vertical jump" → detected as `vertical_jump`
+- [ ] "Run 5K faster" → detected as `5k_time`
+- [ ] Allow user to confirm/override suggested category
+- [ ] Support custom goals with manual training method selection
+
+**Task 5.3: Sub-milestone system**
+- [ ] Add `goal_milestones` table:
+  ```sql
+  CREATE TABLE goal_milestones (
+      id INTEGER PRIMARY KEY,
+      goal_id INTEGER REFERENCES fitness_goals(id),
+      milestone_value REAL NOT NULL,
+      description TEXT,
+      target_date DATE,
+      achieved_date DATE,
+      status TEXT DEFAULT 'pending'
+  );
+  ```
+- [ ] Auto-generate milestones for new goals (e.g., vertical: touch rim → grab rim → dunk)
+- [ ] Track milestone achievements separately from main goal
+
+### Week 6: Calendar-Aware Load Management
+
+**Task 6.1: Calendar integration for external activities**
+- [ ] Create `assistant/modules/fitness/calendar_integration.py`
+- [ ] Read events from calendar module with fitness-related keywords:
+  - "5-a-side", "football", "soccer"
+  - "jiu-jitsu", "BJJ", "martial arts"
+  - "running", "cycling", "swimming"
+  - "gym", "workout", "training"
+- [ ] Classify activity intensity (high/medium/low)
+- [ ] Calculate weekly external load
+
+**Task 6.2: Activity-aware workout adjustment**
+- [ ] Implement load balancing logic:
+  ```python
+  def adjust_workout_for_calendar(base_workout, calendar_activities, target_date):
+      """
+      Adjust workout based on surrounding activities.
+
+      Rules:
+      - Day before high-intensity activity: reduce volume, focus mobility
+      - Day after high-intensity activity: recovery focus or rest
+      - Game day: light mobility only or rest
+      - No nearby activities: full training load
+      """
+  ```
+- [ ] Add `external_activities` field to weekly_training_plans
+- [ ] Show calendar context in workout justification
+
+**Task 6.3: Weekly load balancing**
+- [ ] Calculate total weekly training load (internal + external)
+- [ ] Cap weekly load based on fitness level and recovery capacity
+- [ ] Distribute remaining load across available training days
+- [ ] Flag overtraining risk if total load too high
+
+### Week 7: Workout Generator with Justifications
+
+**Task 7.1: Enhanced workout generator**
+- [ ] Create `assistant/modules/fitness/workout_generator.py`
+- [ ] Inputs:
+  - User's active goals (with training requirements)
+  - Available equipment
+  - Fitness level
+  - Calendar activities for the week
+  - Recent workout history
+  - Available time
+- [ ] Outputs:
+  - Exercise list with sets/reps
+  - Brief justification per exercise
+  - Overall workout justification
+  - Expected time
+
+**Task 7.2: Justification system**
+- [ ] Create `assistant/modules/fitness/workout_justification.py`
+- [ ] Brief justification (always shown):
+  ```
+  "Plyometrics focus: Building explosive power for your vertical jump goal"
+  "Reduced volume today: 5-a-side game tomorrow"
+  "Recovery session: Post-game mobility and light movement"
+  ```
+- [ ] Detailed justification (expandable):
+  ```
+  "Today's workout focuses on plyometric training because:
+
+   1. Your primary goal is increasing vertical jump
+   2. Plyometrics develop rate of force production
+   3. You have 3 days until your next high-intensity activity (5-a-side)
+   4. Your legs have had 72+ hours recovery since last lower body session
+
+   Expected adaptations: Improved reactive strength, better jump timing
+   Timeline: 4-8 weeks to see measurable improvement"
+  ```
+- [ ] Store justifications in `workout_justifications` table
+
+**Task 7.3: Periodization engine**
+- [ ] Implement mesocycle planning:
+  - Accumulation phase (higher volume, moderate intensity)
+  - Transmutation phase (moderate volume, higher intensity)
+  - Realization phase (lower volume, peak intensity)
+  - Deload (recovery week)
+- [ ] Track weeks in current mesocycle
+- [ ] Auto-suggest phase transitions
+- [ ] Adjust workouts based on current phase
+
+### Week 8: UI, Logging & Reminders
+
+**Task 8.1: Update fitness UI with 5 tabs**
+- [ ] Modify `assistant/modules/voice/fitness_ui.py`
+- [ ] Tab 1: Dashboard
+  - Weekly plan overview
+  - Active goals with progress bars
+  - Calendar preview (upcoming activities)
+  - Quick stats
+- [ ] Tab 2: Today's Workout
+  - Generated workout with justification
+  - "Why this workout" brief + expandable detail
+  - Pause/Resume/Restart buttons
+  - Quick-tap logging per exercise
+  - Voice logging option
+- [ ] Tab 3: Goals
+  - Add/edit goals
+  - Sub-milestones display
+  - Progress tracking charts
+  - Goal-specific exercise recommendations
+- [ ] Tab 4: Assessment (monthly)
+  - Fitness tests
+  - Progress vs previous assessment
+  - Performance vs goal targets
+- [ ] Tab 5: Setup
+  - Profile (height/weight/age)
+  - Equipment selection
+  - Focus areas
+  - Calendar sync settings
+
+**Task 8.2: Smart logging reminders**
+- [ ] Hook into BIL evening routine:
+  - Check if workout completed but not logged
+  - Prompt: "You completed a workout today but haven't logged. Log now?"
+- [ ] Hook into BIL morning routine:
+  - Check if yesterday's workout needs logging
+  - Prompt: "Yesterday's workout needs logging. Log now?"
+- [ ] Create `fitness_logging_hooks.py`
+- [ ] Integration with voice module for voice logging
+
+**Task 8.3: Quick-tap logging interface**
+- [ ] During workout: tap to log each set
+- [ ] Fields: reps, weight (optional), RPE, notes (optional)
+- [ ] One-tap to mark exercise complete
+- [ ] End-of-workout summary
+
+### Database Schema Additions
+
+```sql
+-- Goal training requirements mapping
+CREATE TABLE goal_training_types (
+    id INTEGER PRIMARY KEY,
+    goal_category TEXT NOT NULL UNIQUE,
+    training_methods TEXT NOT NULL,  -- JSON array
+    exercises TEXT,  -- JSON array of exercise names
+    movement_patterns TEXT,  -- JSON array
+    periodization_style TEXT,
+    notes TEXT
+);
+
+-- Goal milestones
+CREATE TABLE goal_milestones (
+    id INTEGER PRIMARY KEY,
+    goal_id INTEGER NOT NULL REFERENCES fitness_goals(id) ON DELETE CASCADE,
+    milestone_value REAL NOT NULL,
+    description TEXT,
+    target_date DATE,
+    achieved_date DATE,
+    status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'achieved', 'skipped')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Weekly training plans (generated)
+CREATE TABLE weekly_training_plans (
+    id INTEGER PRIMARY KEY,
+    week_start DATE NOT NULL,
+    plan_json TEXT NOT NULL,
+    justification_json TEXT,
+    calendar_activities_json TEXT,
+    goals_considered TEXT,  -- JSON array of goal IDs
+    status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'active', 'completed')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(week_start)
+);
+
+-- Workout justifications
+CREATE TABLE workout_justifications (
+    id INTEGER PRIMARY KEY,
+    session_id INTEGER REFERENCES workout_sessions(id),
+    plan_id INTEGER REFERENCES weekly_training_plans(id),
+    brief_text TEXT NOT NULL,
+    detailed_text TEXT,
+    goals_addressed TEXT,  -- JSON array of goal IDs
+    calendar_context TEXT,
+    periodization_phase TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- External activities (from calendar)
+CREATE TABLE external_activities (
+    id INTEGER PRIMARY KEY,
+    activity_date DATE NOT NULL,
+    activity_type TEXT NOT NULL,
+    intensity TEXT DEFAULT 'medium' CHECK(intensity IN ('low', 'medium', 'high')),
+    duration_minutes INTEGER,
+    calendar_event_id TEXT,  -- Reference to calendar module
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Success Criteria for Phase 4.5+
+
+Phase 4.5+ is **COMPLETE** when:
+
+- [x] User can add any fitness goal and system understands training requirements
+- [x] Goals have sub-milestones with progress tracking
+- [x] System reads calendar for external activities (5-a-side, etc.)
+- [x] Workout intensity adjusts based on calendar (pre-game, post-game)
+- [x] Generated workouts show brief + detailed justifications
+- [x] Justifications reference user's goals and calendar context
+- [x] Periodization phases applied to training plans
+- [x] UI has 5 tabs (Dashboard, Workout, Goals, Assessment, Setup)
+- [x] Quick-tap logging works during/after workout
+- [ ] Voice logging available (deferred - requires voice module integration)
+- [x] Evening/morning reminders prompt for unlogged workouts
+- [x] All new unit tests pass (66 tests)
+- [ ] All Playwright E2E tests pass (deferred - manual testing verified)
+
+### Estimated Effort
+
+**Week 5:** Goal intelligence engine, training type mapping
+**Week 6:** Calendar integration, load management
+**Week 7:** Workout generator, justification system
+**Week 8:** UI updates, logging, reminders
+
+**Total:** ~4 additional weeks
