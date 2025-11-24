@@ -26,7 +26,7 @@ def check_email_exists(email_id: str) -> bool:
             text("SELECT COUNT(*) FROM emails WHERE email_id = :eid"), {"eid": email_id}
         )
         count = result.scalar()
-        return count > 0
+        return count is not None and count > 0
 
 
 def store_email(email_data: Dict[str, Any]) -> bool:

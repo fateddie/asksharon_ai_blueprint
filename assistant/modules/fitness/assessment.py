@@ -241,7 +241,7 @@ def save_assessment(
                     "notes": notes,
                 },
             )
-            return existing[0]
+            return int(existing[0])
         else:
             # Insert new assessment
             conn.execute(
@@ -276,7 +276,9 @@ def save_assessment(
                 },
             )
             row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-            return row[0]
+            if row is None:
+                raise RuntimeError("Failed to get last insert rowid")
+            return int(row[0])
 
 
 def get_latest_assessment() -> Optional[Dict[str, Any]]:

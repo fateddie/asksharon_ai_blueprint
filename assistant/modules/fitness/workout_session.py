@@ -154,7 +154,9 @@ def start_workout_session(template_id: Optional[int] = None) -> int:
         )
 
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def end_workout_session(
@@ -274,7 +276,9 @@ def log_exercise_set(
         )
 
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def get_session_logs(session_id: int) -> List[Dict[str, Any]]:
@@ -393,9 +397,12 @@ def get_weekly_stats() -> Dict[str, Any]:
             {"week_ago": week_ago},
         ).fetchone()
 
-        sessions = row[0] or 0
-        total_minutes = row[1] or 0
-        avg_rpe = round(row[2], 1) if row[2] else None
+        if row is None:
+            sessions, total_minutes, avg_rpe = 0, 0, None
+        else:
+            sessions = row[0] or 0
+            total_minutes = row[1] or 0
+            avg_rpe = round(float(row[2]), 1) if row[2] else None
 
         # Total sets
         row = conn.execute(
@@ -409,7 +416,7 @@ def get_weekly_stats() -> Dict[str, Any]:
             {"week_ago": week_ago},
         ).fetchone()
 
-        total_sets = row[0] or 0
+        total_sets = row[0] if row else 0
 
         # Most worked muscle group
         row = conn.execute(

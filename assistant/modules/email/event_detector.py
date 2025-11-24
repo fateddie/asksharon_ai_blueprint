@@ -96,7 +96,7 @@ def is_newsletter_sender(sender: str) -> bool:
     return False
 
 
-def detect_event_type(text: str, sender: str = None) -> Optional[str]:
+def detect_event_type(text: str, sender: Optional[str] = None) -> Optional[str]:
     """
     Detect the type of event from text.
 
@@ -125,7 +125,7 @@ def detect_event_type(text: str, sender: str = None) -> Optional[str]:
     # Return event type with highest score (if > 0)
     max_score = max(scores.values())
     if max_score > 0:
-        return max(scores, key=scores.get)
+        return max(scores, key=lambda k: scores[k])
 
     return None
 
@@ -344,7 +344,9 @@ def detect_event_from_email(email_data: Dict) -> Optional[Dict]:
         "location": location,
         "url": primary_url,
         "attendees": ", ".join(attendees[:5]) if attendees else None,
-        "confidence": _calculate_confidence(event_type, event_datetime, location or primary_url),
+        "confidence": _calculate_confidence(
+            event_type, event_datetime is not None, bool(location or primary_url)
+        ),
     }
 
     return event_data

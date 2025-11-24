@@ -68,7 +68,9 @@ def start_scheduler():
     # Email sync every 30 minutes
     schedule.every(30).minutes.do(job_email_sync)
 
-    print("🕓 Scheduler started (email sync every 30 min, evening planning 6pm, morning fallback 8am)")
+    print(
+        "🕓 Scheduler started (email sync every 30 min, evening planning 6pm, morning fallback 8am)"
+    )
 
     def loop():
         while True:

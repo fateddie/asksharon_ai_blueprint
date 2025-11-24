@@ -145,8 +145,11 @@ def get_energy_patterns() -> Dict[str, Any]:
             {"start": start_date},
         ).fetchone()
 
-        avg_am = round(row[0], 1) if row[0] else None
-        avg_pm = round(row[1], 1) if row[1] else None
+        if row is None:
+            avg_am, avg_pm = None, None
+        else:
+            avg_am = round(float(row[0]), 1) if row[0] else None
+            avg_pm = round(float(row[1]), 1) if row[1] else None
 
         # Best days of week (by average energy)
         rows = conn.execute(

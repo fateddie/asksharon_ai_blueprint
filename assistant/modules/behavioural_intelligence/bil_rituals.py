@@ -249,7 +249,7 @@ def _count_today_completed_tasks() -> int:
             {"today": today},
         ).fetchone()
 
-    return row[0] if row else 0
+    return int(row[0]) if row else 0
 
 
 def _get_evening_planning_streak() -> Dict[str, Any]:

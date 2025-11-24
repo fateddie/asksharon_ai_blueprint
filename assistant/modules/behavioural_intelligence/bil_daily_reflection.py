@@ -7,7 +7,7 @@ Handles evening planning and morning fallback data persistence.
 """
 
 import json
-from datetime import date, datetime, timedelta
+from datetime import date as date_type, datetime, timedelta
 from typing import Optional, List, Dict, Any
 from sqlalchemy import text
 from pydantic import BaseModel
@@ -18,8 +18,8 @@ from .bil_config import engine
 class DailyReflection(BaseModel):
     """Pydantic model for daily reflection data"""
 
-    date: date
-    planning_date: Optional[date] = None
+    date: date_type
+    planning_date: Optional[date_type] = None
     what_went_well: Optional[str] = None
     what_got_in_way: Optional[str] = None
     one_thing_learned: Optional[str] = None
@@ -32,7 +32,7 @@ class DailyReflection(BaseModel):
 
 
 def save_evening_plan(
-    plan_for_date: date,
+    plan_for_date: date_type,
     top_priorities: List[str],
     one_thing_great: str,
     what_went_well: Optional[str] = None,
@@ -54,7 +54,7 @@ def save_evening_plan(
         reflection_id: Database ID of the saved reflection
     """
     priorities_json = json.dumps(top_priorities[:3])  # Max 3 priorities
-    planning_date = date.today()
+    planning_date = date_type.today()
 
     with engine.begin() as conn:
         # Upsert: Update if exists, insert if not
@@ -102,11 +102,11 @@ def save_evening_plan(
             {"date": plan_for_date.isoformat()},
         ).fetchone()
 
-    return row[0] if row else 0
+    return int(row[0]) if row else 0
 
 
 def save_morning_fallback(
-    plan_for_date: date,
+    plan_for_date: date_type,
     top_priorities: List[str],
     one_thing_great: str,
 ) -> int:
@@ -155,10 +155,10 @@ def save_morning_fallback(
             {"date": plan_for_date.isoformat()},
         ).fetchone()
 
-    return row[0] if row else 0
+    return int(row[0]) if row else 0
 
 
-def get_plan_for_date(target_date: date) -> Optional[Dict[str, Any]]:
+def get_plan_for_date(target_date: date_type) -> Optional[Dict[str, Any]]:
     """
     Get the plan for a specific date.
 
@@ -182,15 +182,15 @@ def get_plan_for_date(target_date: date) -> Optional[Dict[str, Any]]:
 
 def get_today_plan() -> Optional[Dict[str, Any]]:
     """Get today's plan."""
-    return get_plan_for_date(date.today())
+    return get_plan_for_date(date_type.today())
 
 
 def get_tomorrow_plan() -> Optional[Dict[str, Any]]:
     """Get tomorrow's plan (for evening planning check)."""
-    return get_plan_for_date(date.today() + timedelta(days=1))
+    return get_plan_for_date(date_type.today() + timedelta(days=1))
 
 
-def check_evening_plan_exists(target_date: date) -> bool:
+def check_evening_plan_exists(target_date: date_type) -> bool:
     """Check if evening plan exists for a date."""
     with engine.connect() as conn:
         row = conn.execute(
@@ -216,7 +216,7 @@ def get_recent_reflections(days: int = 7) -> List[Dict[str, Any]]:
     Returns:
         List of reflection dicts
     """
-    start_date = date.today() - timedelta(days=days)
+    start_date = date_type.today() - timedelta(days=days)
 
     with engine.connect() as conn:
         rows = conn.execute(
@@ -233,7 +233,7 @@ def get_recent_reflections(days: int = 7) -> List[Dict[str, Any]]:
     return [_row_to_dict(row) for row in rows]
 
 
-def update_energy_levels(target_date: date, energy_am: int, energy_pm: int) -> bool:
+def update_energy_levels(target_date: date_type, energy_am: int, energy_pm: int) -> bool:
     """
     Update energy levels for a date.
 

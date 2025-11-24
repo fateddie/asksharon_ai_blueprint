@@ -6,6 +6,7 @@ Session tracking, adherence reporting, and weekly reviews.
 
 from fastapi import APIRouter
 from datetime import datetime, timedelta
+from typing import Any, Dict, List
 from sqlalchemy import text
 import random
 
@@ -139,7 +140,7 @@ def generate_weekly_review():
         metrics = metrics_result.fetchall()
 
     # Build review
-    review = {
+    review: Dict[str, Any] = {
         "week_of": datetime.now().strftime("%Y-%m-%d"),
         "summary": {"total_goals": len(goals), "goals_on_track": 0, "goals_behind": 0},
         "goals_detail": [],

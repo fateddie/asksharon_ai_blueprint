@@ -207,4 +207,40 @@ Once all features migrated:
 **Status**: Planning
 **Owner**: Engineering Team
 **Next Review**: Q1 2026
-**Last Updated**: 2025-11-21
+**Last Updated**: 2025-11-24
+
+---
+
+## File Size Technical Debt (Phase 4.5+)
+
+The following files exceed the 500-line limit and are tracked for future splitting:
+
+### Priority 1: Critical (>1000 lines)
+| File | Lines | Proposed Split |
+|------|-------|----------------|
+| `assistant/modules/fitness/training_intelligence.py` | 1348 | → `training_intelligence.py` (goal detection) + `training_requirements.py` (requirements) + `periodization.py` (cycles) |
+| `assistant/modules/voice/fitness_ui.py` | 1052 | → `fitness_ui.py` (main) + `fitness_dashboard.py` + `fitness_workout_tab.py` + `fitness_goals_tab.py` |
+| `assistant/modules/fitness/exercise_seeds.py` | 922 | Consider data file exception (primarily static data) |
+
+### Priority 2: High (>700 lines)
+| File | Lines | Proposed Split |
+|------|-------|----------------|
+| `assistant/modules/fitness/workout_session.py` | 746 | → `workout_session.py` (session management) + `session_exercises.py` (exercise tracking) |
+
+### Priority 3: Medium (500-600 lines)
+| File | Lines | Proposed Split |
+|------|-------|----------------|
+| `assistant/modules/fitness/workout_generator.py` | 572 | Review for logical split points |
+| `assistant/modules/fitness/goals.py` | 565 | Review for logical split points |
+| `assistant/modules/behavioural_intelligence/bil_habits.py` | 562 | Review for logical split points |
+
+### Approach
+1. File size violations are now **warnings** (not blocking)
+2. Each file should be split when it's being modified for other reasons
+3. Maintain backward compatibility by re-exporting from original location
+4. Update imports gradually across codebase
+
+### Completion Target
+- Priority 1: Q1 2026
+- Priority 2: Q2 2026
+- Priority 3: Q3 2026

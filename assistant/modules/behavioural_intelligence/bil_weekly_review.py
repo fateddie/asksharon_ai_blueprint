@@ -125,7 +125,7 @@ def get_incomplete_items() -> Dict[str, List[Dict[str, Any]]]:
     Returns:
         Dictionary with categorized incomplete items
     """
-    result = {
+    result: Dict[str, List[Dict[str, Any]]] = {
         "overdue_tasks": [],
         "stale_goals": [],
         "unclassified_tasks": [],
@@ -312,7 +312,7 @@ def save_weekly_review(
                     "now": datetime.now().isoformat(),
                 },
             )
-            return existing[0]
+            return int(existing[0])
         else:
             # Create new
             conn.execute(
@@ -337,7 +337,9 @@ def save_weekly_review(
             )
 
             row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-            return row[0]
+            if row is None:
+                raise RuntimeError("Failed to get last insert rowid")
+            return int(row[0])
 
 
 def get_last_weekly_review() -> Optional[Dict[str, Any]]:

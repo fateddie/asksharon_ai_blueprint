@@ -117,7 +117,9 @@ def create_thought_log(
         )
 
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def update_thought_log(

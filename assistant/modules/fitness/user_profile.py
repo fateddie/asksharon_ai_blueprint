@@ -165,7 +165,7 @@ def save_user_profile(
                     "updated_at": now,
                 },
             )
-            return existing[0]
+            return int(existing[0])
         else:
             # Insert new profile
             conn.execute(
@@ -201,7 +201,9 @@ def save_user_profile(
                 },
             )
             row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-            return row[0]
+            if row is None:
+                raise RuntimeError("Failed to get last insert rowid")
+            return int(row[0])
 
 
 def get_user_profile() -> Optional[Dict[str, Any]]:

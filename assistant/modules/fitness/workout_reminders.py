@@ -120,7 +120,9 @@ def add_to_logging_queue(session_id: int, workout_date: Optional[date] = None) -
             },
         )
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def mark_workout_logged(session_id: int) -> bool:

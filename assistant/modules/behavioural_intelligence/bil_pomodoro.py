@@ -51,7 +51,9 @@ def start_pomodoro(
         )
 
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def complete_pomodoro(
@@ -144,7 +146,7 @@ def record_interruption(session_id: int) -> int:
             {"id": session_id},
         ).fetchone()
 
-        return row[0] if row else 0
+        return int(row[0]) if row else 0
 
 
 def get_active_pomodoro() -> Optional[Dict[str, Any]]:
@@ -249,9 +251,12 @@ def get_pomodoro_stats(days: int = 7) -> Dict[str, Any]:
             {"start": start_date},
         ).fetchone()
 
-        completed = row[0] or 0
-        total_minutes = row[1] or 0
-        total_interruptions = row[2] or 0
+        if row is None:
+            completed, total_minutes, total_interruptions = 0, 0, 0
+        else:
+            completed = row[0] or 0
+            total_minutes = row[1] or 0
+            total_interruptions = row[2] or 0
 
         # Total started (including abandoned)
         row = conn.execute(
@@ -264,7 +269,7 @@ def get_pomodoro_stats(days: int = 7) -> Dict[str, Any]:
             {"start": start_date},
         ).fetchone()
 
-        total_started = row[0] or 0
+        total_started = row[0] if row else 0
 
         # Average interruptions per completed pomodoro
         avg_interruptions = total_interruptions / completed if completed > 0 else 0

@@ -50,7 +50,9 @@ def create_habit_chain(
 
         # Get the inserted ID
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def get_habit_chains(active_only: bool = True) -> List[Dict[str, Any]]:
@@ -277,7 +279,9 @@ def create_if_then_plan(
         )
 
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def get_if_then_plans(

@@ -108,7 +108,7 @@ def get_tasks_by_quadrant() -> Dict[str, List[Dict[str, Any]]]:
             "IV": [...]
         }
     """
-    result = {"I": [], "II": [], "III": [], "IV": []}
+    result: Dict[str, List[Dict[str, Any]]] = {"I": [], "II": [], "III": [], "IV": []}
 
     with engine.connect() as conn:
         rows = conn.execute(

@@ -129,7 +129,9 @@ def add_equipment(equipment_type: str, details: Optional[str] = None, quantity: 
             },
         )
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def remove_equipment(equipment_type: str) -> bool:

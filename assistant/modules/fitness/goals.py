@@ -181,7 +181,9 @@ def create_goal(
             },
         )
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def update_goal_progress(goal_id: int, new_value: float, notes: Optional[str] = None) -> bool:

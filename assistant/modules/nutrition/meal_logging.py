@@ -112,7 +112,9 @@ def add_custom_food(
             },
         )
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def create_meal(meal_date: date, meal_type: str, notes: Optional[str] = None) -> int:
@@ -138,7 +140,9 @@ def create_meal(meal_date: date, meal_type: str, notes: Optional[str] = None) ->
             {"date": meal_date.isoformat(), "type": meal_type, "notes": notes},
         )
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def add_food_to_meal(
@@ -196,7 +200,9 @@ def add_food_to_meal(
             },
         )
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def get_meals_for_date(target_date: date) -> List[Dict[str, Any]]:

@@ -186,12 +186,12 @@ def execute_pending_action(client, pending_data: dict, action_type: str) -> str:
 
         # EMAIL ACTIONS (with confirmation)
         elif action_type == "archive_email":
-            result: str = archive_email(pending_data)
-            return result
+            email_result = archive_email(pending_data)
+            return email_result
 
         elif action_type == "delete_email":
-            result = delete_email(pending_data)
-            return result
+            email_result = delete_email(pending_data)
+            return email_result
 
         # CALENDAR ACTIONS (with confirmation)
         elif action_type == "hide_calendar_event":

@@ -664,7 +664,9 @@ def create_goal_with_intelligence(
         )
 
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        goal_id = row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        goal_id = int(row[0])
 
         # Generate milestones if requested
         milestones = []
@@ -1073,7 +1075,9 @@ def add_external_activity(
         )
 
         row = conn.execute(text("SELECT last_insert_rowid()")).fetchone()
-        return row[0]
+        if row is None:
+            raise RuntimeError("Failed to get last insert rowid")
+        return int(row[0])
 
 
 def get_activities_for_week(week_start: date) -> List[Dict[str, Any]]:

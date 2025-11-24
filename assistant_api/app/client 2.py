@@ -2,10 +2,14 @@
 API Client for Streamlit
 =========================
 Simple HTTP client for Assistant API
+
+This client is intended for use by the Streamlit UI layer.
+It communicates with the Assistant API via HTTP, maintaining
+proper layer separation.
 """
 
 import requests
-from typing import Any, Dict, List, Optional
+from typing import List, Dict, Optional
 from datetime import date
 
 
@@ -39,7 +43,7 @@ class AssistantAPIClient:
 
         Returns: {"items": [...], "total": int}
         """
-        params: Dict[str, Any] = {"limit": limit, "offset": offset}
+        params = {"limit": limit, "offset": offset}
 
         if type:
             params["type"] = type
